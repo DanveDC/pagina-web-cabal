@@ -1,105 +1,96 @@
 @import "tailwindcss";
 
-/* ─── CABAL DESIGN SYSTEM — Taste Skill + Emil Kowalski ─────────────────────
-   Taste Skill rules enforced:
-   - DESIGN_VARIANCE: 8  → asymmetric layouts, fractional grids
-   - MOTION_INTENSITY: 6 → CSS transitions + spring physics
-   - VISUAL_DENSITY: 4   → Daily App Mode, generous spacing
-   - Inter BANNED → Geist
-   - Neon/outer glows BANNED → diffusion shadows + inner borders
-   - Pure black (#000) BANNED → brand deep purple
-   - Emoji BANNED → SVG icons only
-   - Brand purple exact: #2D1254 / #3D1C6E / #6B40A8
+/* ─── STITCH DESIGN SYSTEM — Cabal Corretaje de Seguros ─────────────────────
+   Primary:      #3A1335 (Deep Purple / Eggplant)
+   Primary hover:#5A1D4F
+   Accent CTA:   #C2A378 (Sand Gold)
+   Background:   #fff7f9
    ─────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* ── Canvas ── */
-  --bg:              #FAFAF9;
-  --bg-subtle:       #F5F0FF;
-  --bg-muted:        #EDE7FF;
-  --surface:         #FFFFFF;
-  --surface-raised:  #F8F5FF;
-  --surface-overlay: #EDE7FF;
+  /* ── Brand ── */
+  --brand:              #3A1335;
+  --brand-hover:        #5A1D4F;
+  --brand-container:    #3a1335;
+  --on-brand:           #ffffff;
 
-  /* ── Borders — light mode (Taste: 1px inner refraction) ── */
-  --border:          rgba(61, 28, 110, 0.09);
-  --border-hover:    rgba(61, 28, 110, 0.18);
-  --border-focus:    rgba(61, 28, 110, 0.45);
-  --border-strong:   rgba(61, 28, 110, 0.28);
-  --border-glass:    rgba(61, 28, 110, 0.06);
+  /* ── Accent CTA (Sand Gold) ── */
+  --cta-gold:           #C2A378;
+  --cta-gold-hover:     #B8956A;
 
-  /* ── Foreground ── */
-  --fg:              #1A0D2E;
-  --fg-muted:        #5A5570;
-  --fg-subtle:       #9090AA;
+  /* ── Canvas & Surface ── */
+  --bg-page:            #fff7f9;
+  --surface:            #ffffff;
+  --surface-low:        #fbf1f5;
+  --surface-container:  #f5ebef;
 
-  /* ── Accent: REAL brand purple ── */
-  --accent:          #3D1C6E;
-  --accent-dim:      #2D1254;
-  --accent-bright:   #6B40A8;
-  --accent-surface:  rgba(61, 28, 110, 0.07);
-  --accent-glass:    rgba(61, 28, 110, 0.12);
+  /* ── Text ── */
+  --on-surface:         #1f1a1d;
+  --on-surface-variant: #4e444b;
+  --on-surface-subtle:  #7a6d74;
+
+  /* ── Outline ── */
+  --outline:            #80747b;
+  --outline-variant:    #d2c2cb;
 
   /* ── Semantic ── */
-  --success:         #059669;
-  --error:           #DC2626;
-  --warning:         #D97706;
+  --success:            #059669;
+  --error:              #DC2626;
+  --warning:            #D97706;
 
-  /* ── Brand crimson (slogan color) ── */
-  --crimson:         #9B1B30;
+  /* ── Legacy aliases (cotizador compat) ── */
+  --background:         var(--bg-page);
+  --foreground:         var(--on-surface);
+  --foreground-muted:   var(--on-surface-variant);
+  --cta-bg:             var(--brand);
+  --cta-hover:          var(--brand-hover);
+  --cta-text:           var(--on-brand);
+  --fg:                 var(--on-surface);
+  --fg-muted:           var(--on-surface-variant);
 
-  /* ── Aliases for backward compat (cotizador components) ── */
-  --background:        var(--bg);
-  --foreground:        var(--fg);
-  --foreground-muted:  var(--fg-muted);
-  --foreground-subtle: var(--fg-subtle);
-  --warning-surface:   rgba(217, 119, 6, 0.08);
+  /* ── Typography ── */
+  --font-display:       'Playfair Display', Georgia, serif;
+  --font-body:          'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans:          var(--font-body);
 
-  /* ── Hero dark palette ── */
-  --hero-from:       #2D1254;
-  --hero-to:         #1A0830;
+  /* ── Shape ── */
+  --r-sm:   2px;
+  --r-base: 4px;
+  --r-md:   6px;
+  --r-lg:   8px;
+  --r-xl:   12px;
+  --r-full: 9999px;
 
-  /* ── Tipografía — Taste: Inter BANNED, usar Geist ── */
-  --font-sans: "Geist", "Outfit", system-ui, -apple-system, sans-serif;
-  --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, monospace;
+  /* ── Shadows ── */
+  --shadow-float:  0px 10px 40px rgba(58, 19, 53, 0.05);
+  --shadow-card:   0 2px 8px rgba(58, 19, 53, 0.06);
+  --shadow-card-hover: 0 8px 28px rgba(58, 19, 53, 0.12);
 
-  /* ── Radios ── */
-  --r-sm:  6px;
-  --r-md:  10px;
-  --r-lg:  14px;
-  --r-xl:  20px;
-  --r-2xl: 28px;
-
-  /* ── Emil Kowalski Easings exactos ── */
+  /* ── Easings ── */
   --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
-  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 
-  /* ── Duraciones ── */
-  --dur-btn:     140ms;
-  --dur-ui:      200ms;
-  --dur-modal:   300ms;
-
-  /* ── Taste: diffusion shadows tinted to brand purple (NO neon glows) ── */
-  --shadow-sm:  0 2px 8px rgba(61,28,110,0.08), 0 0 0 1px var(--border);
-  --shadow-md:  0 8px 24px rgba(61,28,110,0.12), 0 0 0 1px var(--border);
-  --shadow-lg:  0 20px 40px -8px rgba(61,28,110,0.16), 0 0 0 1px var(--border);
-  --shadow-diffuse: 0 20px 60px -15px rgba(61,28,110,0.14);
-  --shadow-glow: 0 0 0 2px rgba(61,28,110,0.20), 0 8px 24px rgba(61,28,110,0.14);
+  /* ── Durations ── */
+  --dur-btn: 140ms;
+  --dur-ui:  200ms;
 }
 
 /* ─── TAILWIND v4 THEME MAPPING ──────────────────────────────────────────────── */
 @theme inline {
-  --color-bg:              var(--bg);
-  --color-bg-subtle:       var(--bg-subtle);
-  --color-surface:         var(--surface);
-  --color-surface-raised:  var(--surface-raised);
-  --color-border:          var(--border);
-  --color-fg:              var(--fg);
-  --color-fg-muted:        var(--fg-muted);
-  --color-accent:          var(--accent);
-  --font-sans:             var(--font-sans);
-  --font-mono:             var(--font-mono);
+  --color-brand:              var(--brand);
+  --color-brand-hover:        var(--brand-hover);
+  --color-cta-gold:           var(--cta-gold);
+  --color-cta-gold-hover:     var(--cta-gold-hover);
+  --color-bg-page:            var(--bg-page);
+  --color-surface:            var(--surface);
+  --color-surface-low:        var(--surface-low);
+  --color-surface-container:  var(--surface-container);
+  --color-on-surface:         var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-outline:            var(--outline);
+  --color-outline-variant:    var(--outline-variant);
+  --font-sans:                var(--font-body);
+  --font-display:             var(--font-display);
 }
 
 /* ─── BASE ──────────────────────────────────────────────────────────────────── */
@@ -113,24 +104,163 @@ html {
 }
 
 body {
-  background-color: var(--bg);
-  color: var(--fg);
-  font-family: var(--font-sans);
-  font-size: 15px;
-  line-height: 1.6;
+  background-color: var(--bg-page);
+  color: var(--on-surface);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
   min-height: 100dvh;
 }
 
 ::selection {
-  background: var(--accent-glass);
-  color: var(--accent-bright);
+  background: rgba(58, 19, 53, 0.12);
+  color: var(--brand);
 }
 
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(61,28,110,0.20); border-radius: 99px; }
+::-webkit-scrollbar-thumb { background: rgba(58,19,53,0.20); border-radius: 99px; }
 
-/* ─── STAGGER (Emil) ────────────────────────────────────────────────────────── */
+/* ─── TYPOGRAPHY SCALE ────────────────────────────────────────────────────── */
+.font-display  { font-family: var(--font-display); }
+.font-body     { font-family: var(--font-body); }
+
+/* Headline scale — Playfair Display */
+.headline-lg {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 5vw, 48px);
+  line-height: clamp(40px, 6vw, 56px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.headline-md {
+  font-family: var(--font-display);
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 700;
+}
+.headline-sm {
+  font-family: var(--font-display);
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+}
+
+/* Body scale — Inter */
+.body-lg  { font-size: 18px; line-height: 28px; }
+.body-md  { font-size: 16px; line-height: 24px; }
+.body-sm  { font-size: 14px; line-height: 20px; }
+
+/* Label caps — used on form labels, section tags */
+.label-caps {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Regulatory data */
+.regulatory {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+/* ─── COMPONENT UTILITIES ────────────────────────────────────────────────── */
+
+/* Primary button */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 22px;
+  border-radius: var(--r-base);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--on-brand);
+  background-color: var(--brand);
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--dur-btn) ease, transform var(--dur-btn) var(--ease-out);
+}
+.btn-primary:hover  { background-color: var(--brand-hover); transform: translateY(-1px); }
+.btn-primary:active { transform: scale(0.97); }
+
+/* CTA / Sand Gold button */
+.btn-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 22px;
+  border-radius: var(--r-base);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: var(--cta-gold);
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--dur-btn) ease, transform var(--dur-btn) var(--ease-out);
+}
+.btn-cta:hover  { background-color: var(--cta-gold-hover); transform: translateY(-1px); }
+.btn-cta:active { transform: scale(0.97); }
+
+/* Ghost button (dark bg) */
+.btn-ghost-dark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 22px;
+  border-radius: var(--r-base);
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.80);
+  background-color: transparent;
+  border: 1px solid rgba(255,255,255,0.25);
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color var(--dur-btn) ease, color var(--dur-btn) ease, transform var(--dur-btn) var(--ease-out);
+}
+.btn-ghost-dark:hover { border-color: rgba(255,255,255,0.50); color: #fff; transform: translateY(-1px); }
+
+/* Card */
+.stitch-card {
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow var(--dur-ui) ease, transform var(--dur-ui) var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .stitch-card:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+  }
+}
+
+/* Bottom-border input (Stitch form fields) */
+.input-stitch {
+  width: 100%;
+  padding: 10px 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid var(--outline-variant);
+  color: var(--on-surface);
+  font-family: var(--font-body);
+  font-size: 14px;
+  outline: none;
+  transition: border-color var(--dur-ui) ease;
+  box-sizing: border-box;
+}
+.input-stitch:focus { border-bottom-color: var(--brand); border-bottom-width: 2px; }
+.input-stitch::placeholder { color: var(--outline); }
+
+/* ─── ANIMATIONS ─────────────────────────────────────────────────────────── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -141,6 +271,22 @@ body {
   100% { transform: translateX(100%); }
 }
 
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes whatsappPulse {
+  0%   { transform: scale(1);   opacity: 0.7; }
+  65%  { transform: scale(1.7); opacity: 0; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+
+@keyframes barGrow {
+  from { width: 0%; }
+  to   { width: var(--bar-w, 100%); }
+}
+
 .stagger-item { animation: fadeUp 420ms var(--ease-out) both; }
 .stagger-item:nth-child(1) { animation-delay: 60ms; }
 .stagger-item:nth-child(2) { animation-delay: 140ms; }
@@ -148,49 +294,17 @@ body {
 .stagger-item:nth-child(4) { animation-delay: 300ms; }
 .stagger-item:nth-child(5) { animation-delay: 380ms; }
 
-/* ─── TASTE: SPOTLIGHT BORDER CARD — light mode ─────────────────────────────── */
-.spotlight-card {
-  position: relative;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  transition: border-color 200ms var(--ease-out), background-color 200ms ease,
-              transform 200ms var(--ease-out), box-shadow 200ms ease;
+/* Marquee */
+.marquee-track {
+  animation: marquee 30s linear infinite;
 }
-
-/* Emil: inner refraction (Liquid Glass) — light mode */
-.spotlight-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.80),
-              inset 0 -1px 0 rgba(61,28,110,0.04);
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* Emil: hover guard — solo pointer devices */
 @media (hover: hover) and (pointer: fine) {
-  .spotlight-card:hover {
-    border-color: var(--border-hover);
-    background: var(--surface-raised);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-diffuse);
-  }
+  .marquee-track:hover { animation-play-state: paused; }
 }
 
-/* ─── TASTE: PRESS FEEDBACK (Emil) ─────────────────────────────────────────── */
-.press {
-  transition: transform var(--dur-btn) var(--ease-out),
-              background-color var(--dur-btn) ease,
-              border-color var(--dur-btn) ease;
-}
-.press:active { transform: scale(0.97) translateY(0) !important; }
-
-/* ─── SKELETON ──────────────────────────────────────────────────────────────── */
+/* Skeleton shimmer */
 .skeleton {
-  background: var(--surface-raised);
+  background: var(--surface-low);
   border-radius: var(--r-md);
   position: relative;
   overflow: hidden;
@@ -199,41 +313,18 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(61,28,110,0.04) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(58,19,53,0.04) 50%, transparent 100%);
   animation: shimmer 1.6s ease-in-out infinite;
 }
 
 /* ─── FOCUS ─────────────────────────────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid var(--accent-bright);
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
   border-radius: var(--r-sm);
 }
 
-/* ─── REDUCED MOTION (Taste + Emil: mantener fade, quitar movimiento) ───────── */
-@media (prefers-reduced-motion: reduce) {
-  .stagger-item { animation: none; opacity: 1; }
-  *, *::before, *::after {
-    animation-duration: 50ms !important;
-    transition-duration: 50ms !important;
-  }
-}
-
-/* ─── MARQUEE ────────────────────────────────────────────────────────────────── */
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-
-.marquee-track {
-  animation: marquee 30s linear infinite;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .marquee-track:hover { animation-play-state: paused; }
-}
-
-/* ─── RESPONSIVE UTILITIES ───────────────────────────────────────────────────── */
+/* ─── NAV RESPONSIVE ─────────────────────────────────────────────────────── */
 .nav-desktop { display: flex; }
 .nav-mobile  { display: none; }
 
@@ -242,16 +333,11 @@ body {
   .nav-mobile  { display: block !important; }
 }
 
-/* ── Brand tokens (new identity) ── */
-:root {
-  --brand:         #3A1335;
-  --brand-hover:   #5A1D4F;
-  --brand-muted:   rgba(58,19,53,0.12);
-  --brand-subtle:  rgba(58,19,53,0.07);
-  --brand-whisper: rgba(58,19,53,0.04);
-  --text-body:     #4A464A;
-
-  --cta-bg:        #3A1335;
-  --cta-hover:     #5A1D4F;
-  --cta-text:      #ffffff;
+/* ─── REDUCED MOTION ─────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .stagger-item { animation: none; opacity: 1; }
+  *, *::before, *::after {
+    animation-duration: 50ms !important;
+    transition-duration: 50ms !important;
+  }
 }
