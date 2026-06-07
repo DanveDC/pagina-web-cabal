@@ -1,177 +1,48 @@
 "use client";
 
-/**
- * Cabal Asesores — Landing Page
- *
- * Taste Skill (design-taste-frontend) aplicado:
- *   DESIGN_VARIANCE: 8  → Hero asimétrico split-screen, grid fraccionario
- *   MOTION_INTENSITY: 6 → CSS spring transitions + scroll reveals
- *   VISUAL_DENSITY: 4   → Daily App Mode
- *
- * Reglas críticas:
- *   ✅ Geist font (Inter BANEADO)
- *   ✅ Hero left-aligned split-screen (centered hero BANEADO en DV:8)
- *   ✅ Emojis BANEADOS → solo SVG icons
- *   ✅ Gradient text en headlines BANEADO
- *   ✅ Outer glows/neón BANEADOS → diffusion shadows + inner refraction borders
- *   ✅ Purple desaturado < 80% sat
- *   ✅ 3-col cards iguales BANEADO → zig-zag + grid asimétrico
- *   ✅ min-h-[100dvh] (h-screen BANEADO)
- *   ✅ spotlight-card con inner refraction (Liquid Glass)
- *   ✅ press feedback scale(0.97) en todos los botones
- *   ✅ Stagger 60-80ms entre items
- *   ✅ IntersectionObserver reveal (once: true)
- *
- * Emil Kowalski aplicado:
- *   ✅ cubic-bezier(0.23,1,0.32,1) ease-out
- *   ✅ scale(0.97) nunca scale(0) como punto de entrada
- *   ✅ Hover guard @media (hover: hover) and (pointer: fine)
- *   ✅ Transición de props exactas, nunca 'all'
- *   ✅ prefers-reduced-motion
- *   ✅ Asimetría enter/exit
- */
-
 import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
 
-// ─── SVG ICONS (sin Lucide por ahora, Taste: emojis BANEADOS) ────────────────
+// ─── SVG ICONS ────────────────────────────────────────────────────────────────
 
-const CarIcon = () => (
-  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M5 17H3v-5l2-5h14l2 5v5h-2" /><circle cx="7.5" cy="17.5" r="1.5" /><circle cx="16.5" cy="17.5" r="1.5" /><path d="M5 12h14" />
-  </svg>
-);
-const HeartPulseIcon = () => (
-  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-  </svg>
-);
-const HomeIcon = () => (
-  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
-  </svg>
-);
-const BuildingIcon = () => (
-  <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-  </svg>
-);
-const CheckIcon = () => (
-  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
 const ArrowRightIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
   </svg>
 );
 const MenuIcon = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
     <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
   </svg>
 );
 const XIcon = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
-const MapPinIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+const CheckIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
   </svg>
 );
-const PhoneIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.56 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+const ShieldIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </svg>
 );
-const MailIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />
+const StarIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
   </svg>
 );
-// Taste: íconos para valor cards (SIN emojis)
-const ScaleIcon = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="3" x2="12" y2="21" /><path d="M3 8l9-5 9 5M3 16l9 5 9-5" />
-  </svg>
-);
-const AwardIcon = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="8" r="6" /><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
-  </svg>
-);
-const ZapIcon = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-  </svg>
-);
-const LockIcon = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-  </svg>
-);
-
 const WhatsAppIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
   </svg>
 );
 
-// ─── DATA ─────────────────────────────────────────────────────────────────────
-
-const RAMOS = [
-  { icon: CarIcon, titulo: "Automóvil", descripcion: "Pólizas de casco, responsabilidad civil y asistencia en carretera para vehículos individuales y flotas empresariales de cualquier tamaño.", beneficios: ["Cobertura a todo riesgo", "Asistencia 24/7 en carretera", "Flota corporativa"], acento: "#5b3cf5" },
-  { icon: HeartPulseIcon, titulo: "Salud", descripcion: "HCM individual y colectivo que garantiza la atención médica de tu familia y equipo de trabajo con la red clínica más amplia.", beneficios: ["Red clínica amplia en Venezuela", "Cobertura internacional", "Planes familiares flexibles"], acento: "#0d9488" },
-  { icon: HomeIcon, titulo: "Hogar", descripcion: "Protección integral para tu residencia y bienes muebles ante robo, incendio, daños eléctricos y desastres naturales.", beneficios: ["Daños estructurales y eléctricos", "Contenido del hogar", "Responsabilidad civil"], acento: "#b45309" },
-  { icon: BuildingIcon, titulo: "Patrimoniales", descripcion: "Seguros de incendio, robo, responsabilidad civil y multirriesgo diseñados para empresas, galpones y activos corporativos.", beneficios: ["Multirriesgo empresarial", "Responsabilidad civil general", "Transporte de mercancía"], acento: "#0369a1" },
-];
-
-const STATS = [
-  { valor: "+20", label: "Años en el mercado" },
-  { valor: "+15", label: "Aseguradoras aliadas" },
-  { valor: "+2.400", label: "Clientes activos" },
-  { valor: "S-746", label: "SUDESEG" },
-];
-
-// Taste: nombres realistas, no "John Doe" / números orgánicos
-const VALUE_CARDS = [
-  { icon: ScaleIcon, titulo: "Independencia", desc: "Sin ataduras con ninguna aseguradora. Negociamos en tu favor, siempre." },
-  { icon: AwardIcon, titulo: "Experiencia", desc: "Más de 23 años en el mercado asegurador venezolano desde 2002." },
-  { icon: ZapIcon, titulo: "Agilidad", desc: "Cotizaciones en menos de 24 horas hábiles, sin trámites innecesarios." },
-  { icon: LockIcon, titulo: "Solidez", desc: "Inscrito y regulado por la Superintendencia de la Actividad Aseguradora." },
-];
-
-const ASEGURADORAS = [
-  "Seguros Caracas", "Mapfre La Seguridad", "Mercantil Seguros",
-  "Qualitas Seguros", "Zurich Seguros", "AIG Venezuela",
-  "BBVA Allianz", "Internacional de Seguros", "Seguros Horizonte",
-  "La Venezolana de Seguros", "Multinacional de Seguros", "Banesco Seguros",
-];
-
-const PASOS = [
-  {
-    num: "01", titulo: "Contactanos",
-    desc: "Completás el formulario en línea o nos escribís directamente por WhatsApp con los detalles de lo que querés asegurar.",
-  },
-  {
-    num: "02", titulo: "Comparamos",
-    desc: "Consultamos con más de 15 aseguradoras para encontrar la mejor cobertura al precio más competitivo del mercado.",
-  },
-  {
-    num: "03", titulo: "Elegís",
-    desc: "Te presentamos un informe comparativo claro y objetivo. Sin letra pequeña, sin presión, con toda la información.",
-  },
-  {
-    num: "04", titulo: "Te acompañamos",
-    desc: "Gestionamos tu póliza, renovaciones y cualquier siniestro durante toda la vigencia del contrato.",
-  },
-];
-
 // ─── HOOK: useInView ──────────────────────────────────────────────────────────
 
-function useInView(margin = "-80px") {
+function useInView(margin = "-60px") {
   const ref = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
   useEffect(() => {
@@ -187,78 +58,62 @@ function useInView(margin = "-80px") {
   return { ref, inView };
 }
 
-// ─── COMPONENTE: Button ───────────────────────────────────────────────────────
-// Taste: press feedback scale(0.97), NO outer glow, diffusion shadow
-// Emil: transition exact props, hover guard
+// ─── DATA ─────────────────────────────────────────────────────────────────────
 
-function Btn({ href, variant = "primary", children, style: s }: {
-  href: string; variant?: "primary" | "ghost";
-  children: React.ReactNode; style?: React.CSSProperties;
-}) {
-  const [pressed, setPressed] = useState(false);
-  const [hovered, setHovered] = useState(false);
+const PLANES = [
+  {
+    nombre: "Cobertura Básica",
+    precio: "Desde $XX/mes",
+    destacado: false,
+    beneficios: [
+      "Seguro de salud HCM básico",
+      "RC vehicular obligatoria",
+      "Asistencia telefónica 24/7",
+      "Renovación anual garantizada",
+    ],
+  },
+  {
+    nombre: "Protección Vital",
+    precio: "Desde $XX/mes",
+    destacado: true,
+    tag: "Más elegido",
+    beneficios: [
+      "HCM con red ampliada",
+      "Casco + RC para flota",
+      "Patrimonial básico incluido",
+      "Asesor dedicado",
+      "Gestión de siniestros prioritaria",
+    ],
+  },
+  {
+    nombre: "Previsión Elite",
+    precio: "Desde $XX/mes",
+    destacado: false,
+    beneficios: [
+      "HCM premium + internacional",
+      "Flota completa todo riesgo",
+      "Multirriesgo empresarial",
+      "Vida colectivo incluido",
+      "Asesor senior dedicado",
+      "SLA de respuesta 4 horas",
+    ],
+  },
+  {
+    nombre: "Global Shield",
+    precio: "A medida",
+    destacado: false,
+    beneficios: [
+      "Cobertura internacional",
+      "Diseño de programa a medida",
+      "Acceso a reaseguradoras globales",
+      "Auditoría anual de riesgos",
+      "Gerente de cuenta exclusivo",
+      "Reporting ejecutivo mensual",
+    ],
+  },
+];
 
-  return (
-    <a href={href}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { setHovered(false); setPressed(false); }}
-      onMouseDown={() => setPressed(true)}
-      onMouseUp={() => setPressed(false)}
-      style={{
-        display: "inline-flex", alignItems: "center", gap: "6px",
-        padding: "11px 20px", borderRadius: "9px",
-        fontSize: "13.5px", fontWeight: 600, textDecoration: "none", cursor: "pointer",
-        // Emil: exact props only
-        transition: "transform 140ms cubic-bezier(0.23,1,0.32,1), background-color 140ms ease, border-color 140ms ease",
-        transform: pressed ? "scale(0.97)" : "scale(1)",
-        ...(variant === "primary" ? {
-          backgroundColor: hovered ? "var(--cta-hover)" : "var(--cta-bg)",
-          color: "var(--cta-text)",
-          // Taste: NO outer glow → diffusion shadow tinted to brand purple
-          boxShadow: pressed ? "none" : "0 8px 24px -4px rgba(58,19,53,0.30)",
-        } : {
-          backgroundColor: "transparent",
-          border: `1px solid ${hovered ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.10)"}`,
-          color: hovered ? "#ffffff" : "rgba(255,255,255,0.70)",
-          // Taste: inner refraction en ghost button
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
-        }),
-        ...s,
-      }}
-    >
-      {children}
-    </a>
-  );
-}
-
-// ─── COMPONENTE: HeroPrimaryBtn (bright purple for dark hero background) ─────
-
-function HeroPrimaryBtn({ href, children }: { href: string; children: React.ReactNode }) {
-  const [pressed, setPressed] = useState(false);
-  const [hovered, setHovered] = useState(false);
-  return (
-    <a href={href}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { setHovered(false); setPressed(false); }}
-      onMouseDown={() => setPressed(true)}
-      onMouseUp={() => setPressed(false)}
-      style={{
-        display: "inline-flex", alignItems: "center", gap: "6px",
-        padding: "12px 24px", borderRadius: "10px",
-        fontSize: "14px", fontWeight: 600, textDecoration: "none", cursor: "pointer",
-        transition: "transform 140ms cubic-bezier(0.23,1,0.32,1), background-color 140ms ease",
-        transform: pressed ? "scale(0.97)" : "scale(1)",
-        backgroundColor: hovered ? "var(--cta-hover)" : "var(--cta-bg)",
-        color: "var(--cta-text)",
-        boxShadow: pressed ? "none" : "0 8px 24px -4px rgba(58,19,53,0.40)",
-      }}
-    >
-      {children}
-    </a>
-  );
-}
-
-// ─── COMPONENTE: WhatsAppBtn ──────────────────────────────────────────────────
+// ─── COMPONENTE: WhatsApp float ───────────────────────────────────────────────
 
 function WhatsAppBtn() {
   const [visible, setVisible] = useState(false);
@@ -284,7 +139,7 @@ function WhatsAppBtn() {
       onMouseUp={() => setPressed(false)}
       style={{
         position: "fixed", bottom: "28px", right: "28px", zIndex: 200,
-        width: "52px", height: "52px", borderRadius: "99px",
+        width: "56px", height: "56px", borderRadius: "9999px",
         backgroundColor: "#25D366",
         display: "flex", alignItems: "center", justifyContent: "center",
         color: "white", textDecoration: "none",
@@ -299,7 +154,7 @@ function WhatsAppBtn() {
     >
       <WhatsAppIcon />
       <span aria-hidden style={{
-        position: "absolute", inset: 0, borderRadius: "99px",
+        position: "absolute", inset: 0, borderRadius: "9999px",
         border: "2px solid rgba(37,211,102,0.5)",
         animation: visible ? "whatsappPulse 2.8s ease-out infinite" : "none",
       }} />
@@ -307,410 +162,124 @@ function WhatsAppBtn() {
   );
 }
 
-// ─── COMPONENTE: SectionLabel ─────────────────────────────────────────────────
+// ─── SECCIÓN: Planes comparativos (PRESERVADA INTACTA) ────────────────────────
 
-function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <span style={{
-      fontSize: "11px", fontWeight: 700, letterSpacing: "0.09em",
-      color: "var(--crimson)", textTransform: "uppercase" as const, display: "block",
-    }}>{children}</span>
-  );
-}
-
-// ─── COMPONENTE: RamoCard (Spotlight border, inner refraction) ────────────────
-// Taste: Spotlight Border Card + Liquid Glass
-// Emil: enter from scale(0.97), hover guard, stagger via delay
-
-function RamoCard({ ramo, delay, reverse }: {
-  ramo: typeof RAMOS[0]; delay: number; reverse?: boolean;
-}) {
-  const { ref, inView } = useInView();
-  const [hovered, setHovered] = useState(false);
-  const Icon = ramo.icon;
-
-  return (
-    <div
-      ref={ref}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      // Taste: spotlight-card class (inner refraction border)
-      className="spotlight-card"
-      style={{
-        padding: "32px",
-        opacity: inView ? 1 : 0,
-        transform: inView ? (hovered ? "translateY(-3px)" : "translateY(0)") : "translateY(12px) scale(0.97)",
-        transition: "opacity 400ms cubic-bezier(0.23,1,0.32,1), transform 220ms cubic-bezier(0.23,1,0.32,1), border-color 200ms ease, background-color 200ms ease, box-shadow 200ms ease",
-        transitionDelay: inView ? `${delay}ms` : "0ms",
-      }}
-    >
-      {/* Layout: icon derecha en filas reverse — Taste: zig-zag */}
-      <div style={{ display: "flex", alignItems: "flex-start", gap: "20px", flexDirection: reverse ? "row-reverse" : "row" }}>
-        <div style={{
-          width: "44px", height: "44px", borderRadius: "11px", flexShrink: 0,
-          backgroundColor: `${ramo.acento}14`,
-          // Taste: inner refraction border
-          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 0 1px ${ramo.acento}20`,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          color: ramo.acento,
-          transition: "background-color 200ms ease",
-          ...(hovered ? { backgroundColor: `${ramo.acento}22` } : {}),
-        }}>
-          <Icon />
-        </div>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ fontSize: "16px", fontWeight: 700, marginBottom: "8px", color: "#3A1335", letterSpacing: "-0.3px" }}>
-            {ramo.titulo}
-          </h3>
-          <p style={{ fontSize: "13.5px", lineHeight: 1.72, color: "#4A464A", marginBottom: "18px" }}>
-            {ramo.descripcion}
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
-            {ramo.beneficios.map((b, i) => (
-              <div key={b} style={{
-                display: "flex", alignItems: "center", gap: "8px",
-                opacity: inView ? 1 : 0,
-                transform: inView ? "translateX(0)" : "translateX(-6px)",
-                transition: "opacity 300ms ease, transform 300ms cubic-bezier(0.23,1,0.32,1)",
-                transitionDelay: inView ? `${delay + 100 + i * 50}ms` : "0ms",
-              }}>
-                <span style={{
-                  width: "16px", height: "16px", borderRadius: "99px", flexShrink: 0,
-                  backgroundColor: `${ramo.acento}14`,
-                  boxShadow: `0 0 0 1px ${ramo.acento}25`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: ramo.acento,
-                }}><CheckIcon /></span>
-                <span style={{ fontSize: "12.5px", color: "#4A464A" }}>{b}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── SECCIÓN: Banda de aseguradoras ─────────────────────────────────────────
-
-function AseguradorasBand() {
-  const items = [...ASEGURADORAS, ...ASEGURADORAS];
-  return (
-    <div style={{
-      borderTop: "1px solid rgba(58,19,53,0.08)",
-      borderBottom: "1px solid rgba(58,19,53,0.08)",
-      backgroundColor: "rgba(58,19,53,0.04)",
-      padding: "20px 0", overflow: "hidden", position: "relative",
-    }}>
-      <div aria-label="Aseguradoras con las que trabajamos" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "100px", background: "linear-gradient(90deg, rgba(58,19,53,0.04) 0%, transparent 100%)", zIndex: 2, pointerEvents: "none" }} />
-      <div aria-hidden style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "100px", background: "linear-gradient(270deg, rgba(58,19,53,0.04) 0%, transparent 100%)", zIndex: 2, pointerEvents: "none" }} />
-      <div className="marquee-track" style={{ display: "flex", gap: "10px", width: "max-content" }}>
-        {items.map((name, i) => (
-          <span key={i} style={{
-            fontSize: "12px", fontWeight: 600, letterSpacing: "0.04em",
-            color: "#4A464A", whiteSpace: "nowrap",
-            padding: "5px 14px", borderRadius: "99px",
-            border: "1px solid rgba(58,19,53,0.10)",
-            backgroundColor: "rgba(58,19,53,0.05)",
-            flexShrink: 0,
-          }}>
-            {name}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── COMPONENTE: PasoCard ────────────────────────────────────────────────────
-
-function PasoCard({ paso, delay, inView }: { paso: typeof PASOS[0]; delay: number; inView: boolean }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <div
-      className="spotlight-card"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        padding: "32px 26px",
-        opacity: inView ? 1 : 0,
-        transform: inView
-          ? hovered ? "translateY(-4px)" : "translateY(0) scale(1)"
-          : "translateY(16px) scale(0.97)",
-        transition: "opacity 420ms cubic-bezier(0.23,1,0.32,1), transform 220ms cubic-bezier(0.23,1,0.32,1), border-color 200ms ease, background-color 200ms ease",
-        transitionDelay: inView ? `${delay}ms` : "0ms",
-      }}
-    >
-      <div style={{
-        fontSize: "42px", fontWeight: 800, letterSpacing: "-3px", lineHeight: 1, marginBottom: "22px",
-        transition: "color 200ms ease",
-        color: hovered ? "rgba(58,19,53,0.28)" : "rgba(58,19,53,0.12)",
-      }}>
-        {paso.num}
-      </div>
-      <h3 style={{ fontSize: "15.5px", fontWeight: 700, color: "#3A1335", marginBottom: "10px", letterSpacing: "-0.3px" }}>
-        {paso.titulo}
-      </h3>
-      <p style={{ fontSize: "13px", lineHeight: 1.78, color: "#4A464A" }}>
-        {paso.desc}
-      </p>
-    </div>
-  );
-}
-
-// ─── SECCIÓN: Cómo funciona ──────────────────────────────────────────────────
-
-function ComoFuncionaSection() {
+function PlanesSection() {
   const { ref, inView } = useInView();
   return (
-    <section style={{
-      padding: "110px 32px",
-      backgroundColor: "rgba(58,19,53,0.04)",
-      position: "relative", overflow: "hidden",
-    }}>
-      {/* Dot grid background */}
-      <div aria-hidden style={{
-        position: "absolute", inset: 0, pointerEvents: "none",
-        backgroundImage: "radial-gradient(circle, rgba(58,19,53,0.025) 1px, transparent 1px)",
-        backgroundSize: "28px 28px",
-      }} />
-
-      <div style={{ maxWidth: "1240px", margin: "0 auto", position: "relative" }}>
+    <section id="planes" style={{ padding: "96px 32px", backgroundColor: "#fff7f9" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <div ref={ref} style={{
-          marginBottom: "64px",
+          textAlign: "center", marginBottom: "56px",
           opacity: inView ? 1 : 0,
-          transform: inView ? "translateY(0)" : "translateY(10px)",
+          transform: inView ? "translateY(0)" : "translateY(12px)",
           transition: "opacity 400ms cubic-bezier(0.23,1,0.32,1), transform 400ms cubic-bezier(0.23,1,0.32,1)",
         }}>
-          <Label>El proceso</Label>
-          <h2 style={{ fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 800, letterSpacing: "-1.5px", marginTop: "10px", color: "#3A1335", maxWidth: "520px" }}>
-            Así de simple es trabajar con nosotros
-          </h2>
-        </div>
-
-        <div className="pasos-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px" }}>
-          {PASOS.map((paso, i) => (
-            <PasoCard key={paso.num} paso={paso} delay={i * 80} inView={inView} />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── SECCIÓN: Servicios ───────────────────────────────────────────────────────
-// Taste: zig-zag (NO 3-col iguales). Grid 2/3 + 1/3 asimétrico
-
-function ServiciosSection() {
-  const { ref, inView } = useInView();
-  return (
-    <section id="servicios" style={{ padding: "110px 32px", maxWidth: "1240px", margin: "0 auto" }}>
-      <div ref={ref} style={{
-        marginBottom: "64px",
-        opacity: inView ? 1 : 0,
-        transform: inView ? "translateY(0)" : "translateY(10px)",
-        transition: "opacity 400ms cubic-bezier(0.23,1,0.32,1), transform 400ms cubic-bezier(0.23,1,0.32,1)",
-      }}>
-        <Label>Nuestros ramos</Label>
-        {/* Taste: NO centered — left-aligned */}
-        <h2 style={{ fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 800, letterSpacing: "-1.5px", marginTop: "10px", color: "#3A1335", maxWidth: "520px" }}>
-          Cobertura para cada necesidad empresarial
-        </h2>
-        <p style={{ fontSize: "15px", color: "#4A464A", marginTop: "12px", maxWidth: "440px", lineHeight: 1.7 }}>
-          Trabajamos con las principales aseguradoras de Venezuela para ofrecerte las mejores opciones del mercado.
-        </p>
-      </div>
-
-      {/* Taste: zig-zag layout, NO 3 cards iguales */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-        {/* Fila 1: 2 + 1 asimétrico */}
-        <div className="ramos-row-1" style={{ display: "grid", gridTemplateColumns: "2fr 1.2fr", gap: "14px" }}>
-          <RamoCard ramo={RAMOS[0]} delay={0} />
-          <RamoCard ramo={RAMOS[1]} delay={80} />
-        </div>
-        {/* Fila 2: 1 + 2 invertido */}
-        <div className="ramos-row-2" style={{ display: "grid", gridTemplateColumns: "1.2fr 2fr", gap: "14px" }}>
-          <RamoCard ramo={RAMOS[2]} delay={160} />
-          <RamoCard ramo={RAMOS[3]} delay={240} reverse />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── SECCIÓN: Nosotros ────────────────────────────────────────────────────────
-
-function NosotrosSection() {
-  const { ref, inView } = useInView();
-  return (
-    <section id="nosotros" style={{
-      borderTop: "1px solid rgba(58,19,53,0.08)",
-      borderBottom: "1px solid rgba(58,19,53,0.08)",
-      backgroundColor: "#FFFFFF", padding: "110px 32px",
-    }}>
-      <div ref={ref} style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        {/* Taste: split layout, NO centered */}
-        <div className="nosotros-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "start" }}>
-
-          {/* Columna izquierda */}
-          <div style={{
-            opacity: inView ? 1 : 0,
-            transform: inView ? "translateX(0)" : "translateX(-14px)",
-            transition: "opacity 500ms cubic-bezier(0.23,1,0.32,1), transform 500ms cubic-bezier(0.23,1,0.32,1)",
+          <span style={{
+            display: "inline-block",
+            fontSize: "11px", fontWeight: 600, letterSpacing: "0.1em",
+            textTransform: "uppercase", color: "#C2A378", marginBottom: "12px",
+          }}>Planes de Protección</span>
+          <h2 style={{
+            fontFamily: "var(--font-playfair, var(--font-display))",
+            fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 700,
+            color: "#3a1335", letterSpacing: "-0.02em", lineHeight: 1.2,
           }}>
-            <Label>Quiénes somos</Label>
-            <h2 style={{ fontSize: "clamp(22px, 3.2vw, 36px)", fontWeight: 800, letterSpacing: "-1px", margin: "12px 0 18px", color: "#3A1335", lineHeight: 1.18 }}>
-              Más de dos décadas cuidando el patrimonio empresarial venezolano
-            </h2>
-            <p style={{ fontSize: "14.5px", lineHeight: 1.8, color: "#4A464A", marginBottom: "14px" }}>
-              Cabal Corretaje de Seguros, C.A. es un corredor independiente inscrito en la Superintendencia de la Actividad Aseguradora bajo el N° S-746, con sede en Torre Credicard, Caracas.
-            </p>
-            <p style={{ fontSize: "14.5px", lineHeight: 1.8, color: "#4A464A", marginBottom: "32px" }}>
-              Actuamos como intermediarios objetivos entre nuestros clientes y las aseguradoras, garantizando siempre la mejor cobertura al precio más competitivo del mercado.
-            </p>
-
-            {/* Taste: divide-y en lugar de cards (VISUAL_DENSITY: 4) */}
-            <div style={{ borderTop: "1px solid rgba(58,19,53,0.08)" }}>
-              {["Asesoría personalizada sin costo", "Gestión integral de siniestros", "Renovaciones y seguimiento continuo", "Acceso a más de 15 aseguradoras"].map((item, i) => (
-                <div key={item} style={{
-                  display: "flex", alignItems: "center", gap: "12px",
-                  padding: "13px 0", borderBottom: "1px solid rgba(58,19,53,0.08)",
-                  opacity: inView ? 1 : 0,
-                  transform: inView ? "translateX(0)" : "translateX(-8px)",
-                  transition: `opacity 350ms ease, transform 350ms cubic-bezier(0.23,1,0.32,1)`,
-                  transitionDelay: `${160 + i * 65}ms`,
-                }}>
-                  <span style={{
-                    width: "20px", height: "20px", borderRadius: "99px", flexShrink: 0,
-                    backgroundColor: "rgba(58,19,53,0.07)",
-                    boxShadow: "0 0 0 1px rgba(58,19,53,0.15)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: "#3A1335",
-                  }}><CheckIcon /></span>
-                  <span style={{ fontSize: "14px", color: "#4A4560" }}>{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Columna derecha — Value cards (Taste: SIN emojis, con SVG icons) */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-            {VALUE_CARDS.map((card, i) => {
-              const Icon = card.icon;
-              return (
-                <div key={card.titulo}
-                  className="spotlight-card"
-                  style={{
-                    padding: "24px",
-                    opacity: inView ? 1 : 0,
-                    transform: inView ? "translateY(0) scale(1)" : "translateY(14px) scale(0.97)",
-                    transition: `opacity 420ms cubic-bezier(0.23,1,0.32,1), transform 420ms cubic-bezier(0.23,1,0.32,1)`,
-                    transitionDelay: `${90 + i * 75}ms`,
-                  }}>
-                  <div style={{
-                    width: "34px", height: "34px", borderRadius: "9px", marginBottom: "14px",
-                    backgroundColor: "rgba(58,19,53,0.07)",
-                    boxShadow: "0 0 0 1px rgba(58,19,53,0.14)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: "#3A1335",
-                  }}><Icon /></div>
-                  <p style={{ fontSize: "13.5px", fontWeight: 700, color: "#3A1335", marginBottom: "6px", letterSpacing: "-0.2px" }}>{card.titulo}</p>
-                  <p style={{ fontSize: "12.5px", lineHeight: 1.68, color: "#4A464A" }}>{card.desc}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── SECCIÓN: CTA Band ────────────────────────────────────────────────────────
-
-function CtaSection() {
-  const { ref, inView } = useInView();
-  return (
-    <section style={{
-      padding: "100px 32px", textAlign: "center",
-      background: "linear-gradient(135deg, #3A1335 0%, #3A1335 50%, #5A1D4F 100%)",
-    }}>
-      <div ref={ref} style={{
-        maxWidth: "560px", margin: "0 auto",
-        opacity: inView ? 1 : 0,
-        transform: inView ? "translateY(0)" : "translateY(12px)",
-        transition: "opacity 500ms cubic-bezier(0.23,1,0.32,1), transform 500ms cubic-bezier(0.23,1,0.32,1)",
-      }}>
-        {/* Taste: NO gradient text, NO "Unleash/Seamless/Next-Gen" */}
-        <h2 style={{ fontSize: "clamp(22px, 3.5vw, 36px)", fontWeight: 800, letterSpacing: "-1px", color: "#FFFFFF", marginBottom: "14px", lineHeight: 1.18 }}>
-          Protege tu empresa hoy
-        </h2>
-        <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.75)", marginBottom: "28px", lineHeight: 1.75 }}>
-          Solicita tu cotización sin compromiso. Te contactamos en menos de 24 horas con las mejores opciones del mercado.
-        </p>
-        <a href="/cotizar"
-          style={{
-            display: "inline-flex", alignItems: "center", gap: "6px",
-            padding: "13px 28px", borderRadius: "10px",
-            fontSize: "14.5px", fontWeight: 600, textDecoration: "none", cursor: "pointer",
-            backgroundColor: "#FFFFFF", color: "#3A1335",
-            transition: "background-color 140ms ease",
-          }}
-          onMouseEnter={e => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.92)")}
-          onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#FFFFFF")}
-        >
-          Solicitar cotización <ArrowRightIcon />
-        </a>
-      </div>
-    </section>
-  );
-}
-
-// ─── SECCIÓN: Contacto ────────────────────────────────────────────────────────
-
-function ContactoSection() {
-  const { ref, inView } = useInView();
-  const CARDS = [
-    { icon: <MapPinIcon />, titulo: "Dirección", lineas: ["Torre Credicard, Piso 5", "Av. Principal del Bosque", "Caracas 1060, Miranda"] },
-    { icon: <PhoneIcon />, titulo: "Teléfonos", lineas: ["+58 212-745.8878", "+58 212-745.8879", "+58 212-745.8880"] },
-    { icon: <MailIcon />, titulo: "Correo electrónico", lineas: ["central@cabalasesores.com", " ", "Respuesta en menos de 24 horas"] },
-  ];
-  return (
-    <section id="contacto" style={{ padding: "110px 32px", maxWidth: "1200px", margin: "0 auto" }}>
-      <div ref={ref}>
-        <div style={{
-          marginBottom: "52px",
-          opacity: inView ? 1 : 0,
-          transform: inView ? "translateY(0)" : "translateY(10px)",
-          transition: "opacity 380ms cubic-bezier(0.23,1,0.32,1), transform 380ms cubic-bezier(0.23,1,0.32,1)",
-        }}>
-          <Label>Contacto</Label>
-          <h2 style={{ fontSize: "clamp(22px, 3.5vw, 36px)", fontWeight: 800, letterSpacing: "-1px", marginTop: "10px", color: "#3A1335" }}>
-            Estamos en Caracas, para todo Venezuela
+            Cuadro Comparativo de Planes
           </h2>
+          <p style={{ fontSize: "16px", color: "#4e444b", marginTop: "12px", maxWidth: "480px", margin: "12px auto 0", lineHeight: 1.6 }}>
+            Encontrá la cobertura que se adapta a las necesidades de tu empresa.
+          </p>
         </div>
-        <div className="contacto-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px" }}>
-          {CARDS.map((card, i) => (
-            <div key={card.titulo}
-              className="spotlight-card"
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" }} className="planes-grid">
+          {PLANES.map((plan, i) => (
+            <div
+              key={plan.nombre}
               style={{
-                padding: "26px",
+                backgroundColor: plan.destacado ? "#3a1335" : "#ffffff",
+                border: `1px solid ${plan.destacado ? "#3a1335" : "#d2c2cb"}`,
+                borderRadius: "8px",
+                padding: "28px 22px",
+                position: "relative",
+                boxShadow: plan.destacado ? "0px 10px 40px rgba(58, 19, 53, 0.18)" : "none",
                 opacity: inView ? 1 : 0,
-                transform: inView ? "translateY(0) scale(1)" : "translateY(10px) scale(0.97)",
-                transition: `opacity 400ms cubic-bezier(0.23,1,0.32,1), transform 400ms cubic-bezier(0.23,1,0.32,1)`,
-                transitionDelay: `${i * 80}ms`,
-              }}>
+                transform: inView
+                  ? plan.destacado ? "translateY(-6px)" : "translateY(0)"
+                  : "translateY(16px)",
+                transition: `opacity 400ms cubic-bezier(0.23,1,0.32,1) ${i * 70}ms, transform 400ms cubic-bezier(0.23,1,0.32,1) ${i * 70}ms`,
+              }}
+            >
+              {plan.tag && (
+                <div style={{
+                  position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)",
+                  backgroundColor: "#C2A378", color: "#fff",
+                  fontSize: "11px", fontWeight: 700, letterSpacing: "0.06em",
+                  padding: "3px 14px", borderRadius: "9999px",
+                  whiteSpace: "nowrap",
+                }}>{plan.tag}</div>
+              )}
+
+              <h3 style={{
+                fontFamily: "var(--font-playfair, var(--font-display))",
+                fontSize: "18px", fontWeight: 600,
+                color: plan.destacado ? "#ffffff" : "#3a1335",
+                marginBottom: "6px",
+              }}>{plan.nombre}</h3>
+
               <div style={{
-                width: "32px", height: "32px", borderRadius: "8px", marginBottom: "16px",
-                backgroundColor: "rgba(58,19,53,0.07)",
-                boxShadow: "0 0 0 1px rgba(58,19,53,0.14)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: "#3A1335",
-              }}>{card.icon}</div>
-              <p style={{ fontSize: "12.5px", fontWeight: 700, color: "#3A1335", marginBottom: "10px", letterSpacing: "0.01em" }}>{card.titulo}</p>
-              {card.lineas.map((l, j) => (
-                <p key={j} style={{ fontSize: "13px", lineHeight: 1.85, color: "#4A464A" }}>{l}</p>
-              ))}
+                fontSize: "13px", fontWeight: 600,
+                color: plan.destacado ? "#C2A378" : "#80747b",
+                marginBottom: "20px",
+              }}>{plan.precio}</div>
+
+              <div style={{ borderTop: `1px solid ${plan.destacado ? "rgba(255,255,255,0.15)" : "#f5ebef"}`, paddingTop: "18px" }}>
+                {plan.beneficios.map((b) => (
+                  <div key={b} style={{
+                    display: "flex", alignItems: "flex-start", gap: "8px",
+                    marginBottom: "10px",
+                  }}>
+                    <span style={{
+                      width: "18px", height: "18px", borderRadius: "9999px",
+                      backgroundColor: plan.destacado ? "rgba(194,163,120,0.20)" : "rgba(58,19,53,0.07)",
+                      border: `1px solid ${plan.destacado ? "rgba(194,163,120,0.40)" : "rgba(58,19,53,0.15)"}`,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      color: plan.destacado ? "#C2A378" : "#3a1335",
+                      flexShrink: 0, marginTop: "1px",
+                    }}><CheckIcon /></span>
+                    <span style={{ fontSize: "13px", lineHeight: 1.5, color: plan.destacado ? "rgba(255,255,255,0.85)" : "#4e444b" }}>{b}</span>
+                  </div>
+                ))}
+              </div>
+
+              <a href="/cotizar" style={{
+                display: "block", textAlign: "center",
+                marginTop: "20px", padding: "10px",
+                borderRadius: "4px",
+                backgroundColor: plan.destacado ? "#C2A378" : "transparent",
+                border: `1px solid ${plan.destacado ? "#C2A378" : "#d2c2cb"}`,
+                color: plan.destacado ? "#ffffff" : "#3a1335",
+                fontSize: "13px", fontWeight: 600,
+                textDecoration: "none",
+                transition: "background-color 140ms ease, border-color 140ms ease",
+              }}
+                onMouseEnter={e => {
+                  if (plan.destacado) {
+                    e.currentTarget.style.backgroundColor = "#B8956A";
+                  } else {
+                    e.currentTarget.style.borderColor = "#3a1335";
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (plan.destacado) {
+                    e.currentTarget.style.backgroundColor = "#C2A378";
+                  } else {
+                    e.currentTarget.style.borderColor = "#d2c2cb";
+                  }
+                }}
+              >
+                Solicitar cotización
+              </a>
             </div>
           ))}
         </div>
@@ -724,366 +293,978 @@ function ContactoSection() {
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [cotizadorTipo, setCotizadorTipo] = useState("empresa");
+  const [cotizadorRamo, setCotizadorRamo] = useState("");
+  const [cotizadorNombre, setCotizadorNombre] = useState("");
+  const [cotizadorSuma, setCotizadorSuma] = useState("");
+
+  // Hover states for contact section icons
+  const [phoneHover, setPhoneHover] = useState(false);
+  const [waHover, setWaHover] = useState(false);
+
+  // Contact form state
+  const [formData, setFormData] = useState({ nombre: "", rif: "", email: "", mensaje: "" });
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  // Hover state for ramos cards
+  const [ramoHover, setRamoHover] = useState<number | null>(null);
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 20);
+    const fn = () => setScrolled(window.scrollY > 50);
     window.addEventListener("scroll", fn, { passive: true });
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSending(true);
+    await new Promise(r => setTimeout(r, 1500));
+    setSending(false);
+    setSent(true);
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontSize: "10px", fontWeight: 700,
+    textTransform: "uppercase", letterSpacing: "0.2em",
+    color: "#4e444b", marginBottom: "8px",
+  };
+
+  const inputStyle: React.CSSProperties = {
+    background: "transparent", border: "none",
+    borderBottom: "1px solid #d2c2cb",
+    padding: "12px 0", width: "100%",
+    fontSize: "14px", color: "#1f1a1d",
+    outline: "none", boxSizing: "border-box",
+    fontFamily: "inherit",
+  };
+
+  const RAMOS_CARDS = [
+    {
+      titulo: "Seguros de Salud",
+      desc: "Cobertura nacional e internacional (HCM) con acceso a las redes clínicas más prestigiosas del país.",
+      badge: "Persona",
+      img: "https://lh3.googleusercontent.com/aida/AP1WRLu6af-yyh5qfO1FJTo0-yy50AwZZ5oZWaVwTxgA2DV7Btt0uGu1nHTHwJ81PooFbIiWkEb1mp3KNwIH1P6LL2RkAJE2ng4Om-c9VfsvrPFjxvfg9-DgE0t_rTdx_-OCV8x7k-2PICTcV8BYcFWvnhJEIVfjSCHvFR6o4saJUtOfIVaInD4vybVyjdwcL26wOnZwDuQdqDkGzl51lugQIp5Y7UMcc-btndwV_gEJrDUugYRt1pnsEB5ICkA",
+      icon: "salud",
+    },
+    {
+      titulo: "Automóvil",
+      desc: "Protección total contra daños propios, robo y RCV, con asistencia vial las 24 horas del día.",
+      badge: "Auto",
+      img: "https://lh3.googleusercontent.com/aida/AP1WRLv1l-blsXcSeeC7q8YIqBzIrOws74L-FNST4T56CFOxDcV3IAy4_T_pieub3DfeSYxhtQOYZAoiFBrnkppjmbwGVj6MNxTOC0iKPN9PFKHOWEPexCuN9K-M0dP-4W-QsKbgzU139kXiVtJGxzKpVoVfiVD3lmORn25eYiDXOXoCamxiIQlk6Rd8__VhOznNcNS7ZVLJ02tfv56gdNgeYolPb8c4I2CkkH29O4W6loru0zivCTECJD2E0h0Y",
+      icon: "auto",
+    },
+    {
+      titulo: "Patrimonios",
+      desc: "Cobertura para bienes inmuebles: casas, apartamentos y activos de bienes raíces. Protección contra incendio, robo y responsabilidad civil.",
+      badge: "Patrimonios",
+      img: "https://lh3.googleusercontent.com/aida/AP1WRLvHvtMFA2kJf7iLEDrCxC-fS34d6xLT7Y3oiXDrgajaHESC5KJNCnfdAF80AgFapp2u8Rn7lUrdEcxM01SnVJxP4MDq5Jjar_6vdkRafBTOBOmR3ESYdxo2S0IiGb58lpOh14T8ll0gxDUSTCbwhVljgpLASF_2-CatdGy1BrGne6V0W3_WPYuWnr5WUDa955HzD9nlEPxe4BGjO9dBeGpkyzcIM9otejzDSKY6-NVNya0eM7kcNxH7oPIs",
+      icon: "patrimonio",
+    },
+  ];
+
   return (
-    <div style={{ backgroundColor: "var(--bg)", color: "var(--fg)", fontFamily: "var(--font-sans)" }}>
+    <div style={{ backgroundColor: "#fff7f9", color: "#1f1a1d", fontFamily: "var(--font-inter, system-ui, sans-serif)" }}>
 
       {/* ════ NAVBAR ════════════════════════════════════════════════════════ */}
       <header style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        height: "56px", display: "flex", alignItems: "center",
+        position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
+        height: "80px",
+        display: "flex", alignItems: "center",
         justifyContent: "space-between", padding: "0 32px",
-        // Emil: exact props, no 'all'
-        transition: "background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease",
-        backgroundColor: scrolled ? "rgba(255,255,255,0.92)" : "transparent",
-        borderBottom: `1px solid ${scrolled ? "rgba(58,19,53,0.09)" : "transparent"}`,
-        backdropFilter: scrolled ? "blur(16px)" : "none",
-        WebkitBackdropFilter: scrolled ? "blur(16px)" : "none",
-        boxShadow: scrolled ? "0 1px 0 rgba(58,19,53,0.06), 0 4px 16px rgba(58,19,53,0.06)" : "none",
+        transition: "background-color 300ms ease, box-shadow 300ms ease",
+        backgroundColor: scrolled ? "#3a1335" : "transparent",
+        backdropFilter: scrolled ? "none" : "blur(12px)",
+        WebkitBackdropFilter: scrolled ? "none" : "blur(12px)",
+        boxShadow: scrolled ? "0 4px 24px rgba(0,0,0,0.25)" : "none",
       }}>
         {/* Logo */}
         <a href="#inicio" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
-          <div style={{
-            backgroundColor: "white",
-            borderRadius: "8px",
-            padding: "5px 10px",
-            overflow: "hidden",
-            flexShrink: 0,
-            boxShadow: "0 1px 4px rgba(0,0,0,0.35)",
-          }}>
-            <Image src="/logos/logo-cabal.png" alt="Cabal Corretaje de Seguros" width={110} height={44} style={{ objectFit: "contain", display: "block" }} />
-          </div>
+          <img
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuARBmzp3-PUBOeHGYMmxYrkBXeST6FQRt-mgMwaJYuO_gMz_F3ULGK7HZS1PewGz3lVWgxx5Klb0jmuIU4Keo1wuZVp0ZTXTiGguBXCaADZGB9ZXStaYmC4felus7ThwMXVptWn5g0IqNufcmoSqsMapgfrpZ_CQz8Z_fhaULlbX4F39E-_uFv2VkYX_2ty85hQSJ7AnAETr-askKhpebrbkisPlhgxWGTxZskmlmUy_19CDKQrq0GF5chys1T3opGV7DfstmU1Bdc1"
+            alt="Cabal Logo"
+            style={{ filter: "brightness(0) invert(1)", height: "48px", width: "auto" }}
+          />
         </a>
 
         {/* Desktop nav */}
-        <nav className="nav-desktop" style={{ display: "flex", gap: "26px", alignItems: "center" }}>
-          {["Servicios", "Nosotros", "Contacto"].map(l => (
-            <a key={l} href={`#${l.toLowerCase()}`} style={{
-              fontSize: "13.5px", fontWeight: 500, color: "#4A4560", textDecoration: "none",
-              transition: "color 130ms ease",
+        <nav className="nav-desktop" style={{ display: "flex", gap: "32px", alignItems: "center" }}>
+          {[
+            { label: "Inicio", href: "#inicio" },
+            { label: "Cotizador", href: "#cotizador" },
+            { label: "Ramos", href: "#ramos" },
+            { label: "Nosotros", href: "#nosotros" },
+            { label: "Contacto", href: "#contacto" },
+          ].map(l => (
+            <a key={l.label} href={l.href} style={{
+              fontSize: "12px", fontWeight: 600,
+              letterSpacing: "0.1em", textTransform: "uppercase",
+              color: "white", textDecoration: "none",
+              transition: "color 150ms ease",
             }}
-              onMouseEnter={e => (e.currentTarget.style.color = "#3A1335")}
-              onMouseLeave={e => (e.currentTarget.style.color = "#4A4560")}>
-              {l}
+              onMouseEnter={e => (e.currentTarget.style.color = "#ffd7f3")}
+              onMouseLeave={e => (e.currentTarget.style.color = "white")}>
+              {l.label}
             </a>
           ))}
         </nav>
 
-        <div className="nav-desktop" style={{ display: "flex", gap: "7px" }}>
-          <Btn href="/auth/login" variant="ghost">Iniciar sesión</Btn>
-          <Btn href="/cotizar">Cotizar</Btn>
+        <div className="nav-desktop">
+          <a href="/cotizar" style={{
+            display: "inline-flex", alignItems: "center",
+            padding: "10px 24px", borderRadius: "4px",
+            fontSize: "12px", fontWeight: 700,
+            letterSpacing: "0.1em", textTransform: "uppercase",
+            textDecoration: "none",
+            color: "#3a1335", backgroundColor: "white",
+            transition: "opacity 150ms ease",
+          }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = "0.9")}
+            onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+          >
+            Cotizar
+          </a>
         </div>
 
         <button onClick={() => setMenuOpen(v => !v)} className="nav-mobile"
-          style={{ display: "none", background: "none", border: "none", cursor: "pointer", color: "#3A1335", padding: "5px" }}
+          style={{ display: "none", background: "none", border: "none", cursor: "pointer", color: "white", padding: "5px" }}
           aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}>
           {menuOpen ? <XIcon /> : <MenuIcon />}
         </button>
       </header>
 
-      {/* Mobile menu — Emil: ease-drawer + asym timing */}
+      {/* Mobile menu */}
       <div className="nav-mobile" style={{
-        position: "fixed", top: "56px", left: 0, right: 0, zIndex: 99,
-        backgroundColor: "#FFFFFF",
-        borderBottom: "1px solid rgba(58,19,53,0.09)",
+        position: "fixed", top: "80px", left: 0, right: 0, zIndex: 49,
+        backgroundColor: "#3a1335",
         overflow: "hidden", display: "none",
-        maxHeight: menuOpen ? "280px" : "0px",
+        maxHeight: menuOpen ? "340px" : "0px",
         transition: menuOpen
           ? "max-height 300ms cubic-bezier(0.32,0.72,0,1)"
           : "max-height 190ms cubic-bezier(0.23,1,0.32,1)",
       }}>
-        <div style={{ padding: "20px 32px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
-          {["Servicios", "Nosotros", "Contacto"].map(l => (
-            <a key={l} href={`#${l.toLowerCase()}`} onClick={() => setMenuOpen(false)}
-              style={{ fontSize: "15px", fontWeight: 500, color: "#4A4560", textDecoration: "none" }}>
-              {l}
+        <div style={{ padding: "20px 32px 28px", display: "flex", flexDirection: "column", gap: "20px" }}>
+          {[
+            { label: "Inicio", href: "#inicio" },
+            { label: "Cotizador", href: "#cotizador" },
+            { label: "Ramos", href: "#ramos" },
+            { label: "Nosotros", href: "#nosotros" },
+            { label: "Contacto", href: "#contacto" },
+          ].map(l => (
+            <a key={l.label} href={l.href} onClick={() => setMenuOpen(false)}
+              style={{ fontSize: "12px", fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "white", textDecoration: "none" }}>
+              {l.label}
             </a>
           ))}
-          <div style={{ height: "1px", backgroundColor: "rgba(58,19,53,0.09)" }} />
           <a href="/cotizar" style={{
-            fontSize: "14px", fontWeight: 600, padding: "12px", borderRadius: "9px",
-            backgroundColor: "#3A1335", color: "#fff", textDecoration: "none", textAlign: "center",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12)",
-          }}>Cotizar ahora</a>
+            fontSize: "12px", fontWeight: 700, padding: "12px 24px", borderRadius: "4px",
+            backgroundColor: "white", color: "#3a1335", textDecoration: "none", textAlign: "center",
+            letterSpacing: "0.1em", textTransform: "uppercase",
+          }}>Cotizar</a>
         </div>
       </div>
 
-      {/* ════ HERO — Taste: Asymmetric Split Screen (DV:8, centered BANEADO) ══ */}
+      {/* ════ HERO ══════════════════════════════════════════════════════════ */}
       <section id="inicio" style={{
-        minHeight: "100dvh",  // Taste: NUNCA h-screen
+        minHeight: "100vh",
         display: "flex", alignItems: "center",
-        padding: "80px 32px 60px",
-        position: "relative", overflow: "hidden",
-        backgroundColor: "#1A0830",
+        overflow: "hidden", paddingTop: "80px",
+        position: "relative",
       }}>
-        {/* Background: multi-layer gradient mesh */}
+        {/* Background image */}
+        <img
+          src="https://lh3.googleusercontent.com/aida/AP1WRLtN42ferh275Njo-WCyYJY_AtUsvRusTFX9wcd9EwKa27bjqXQP7ara9FDXi99JDRUDL1CkBMYs3GjhYdJvoIlf6swtpjm24dn5WVZ4EiiE-c2hnxseJbsEufU5RkSczSnojr8KapIxU2ZrDOlKeUBmnIq328Z7pdSYSTMv-ueLAs9inf5l2Wc1TW878v0AVPNKuF4X8IkMd8TjaZvU8RdUT3kp1zTlaDt9xIqeIHq_aH-VEatQpCTSA00"
+          alt=""
+          aria-hidden
+          style={{
+            position: "absolute", inset: 0,
+            width: "100%", height: "100%",
+            objectFit: "cover", objectPosition: "center",
+          }}
+        />
+        {/* Gradient overlay */}
         <div aria-hidden style={{
-          position: "absolute", inset: 0, pointerEvents: "none",
-          background: [
-            "radial-gradient(ellipse 80% 55% at 70% 35%, rgba(93,45,140,0.35) 0%, transparent 60%)",
-            "radial-gradient(ellipse 50% 40% at 15% 75%, rgba(155,27,48,0.08) 0%, transparent 50%)",
-          ].join(", "),
-        }} />
-        {/* Vertical accent line */}
-        <div aria-hidden style={{
-          position: "absolute", top: "8%", right: "0", width: "1px", height: "84%",
-          background: "linear-gradient(180deg, transparent, rgba(180,130,240,0.18) 35%, rgba(180,130,240,0.18) 65%, transparent)",
-        }} />
-        {/* Subtle dot grid */}
-        <div aria-hidden style={{
-          position: "absolute", inset: 0, pointerEvents: "none",
-          backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
-        }} />
-        {/* Brand watermark */}
-        <div aria-hidden style={{
-          position: "absolute", right: "-20px", bottom: "-20px",
-          width: "420px", height: "167px", pointerEvents: "none",
-          backgroundImage: "url(/logos/logo-cabal.png)",
-          backgroundSize: "contain", backgroundRepeat: "no-repeat", backgroundPosition: "center right",
-          opacity: 0.03, filter: "grayscale(1)",
+          position: "absolute", inset: 0,
+          background: "linear-gradient(rgba(58, 19, 53, 0.85), rgba(58, 19, 53, 0.6))",
         }} />
 
-        {/* Grid: Taste DV:8 — 55/45 split */}
-        <div className="hero-grid" style={{
-          display: "grid",
-          // Taste: fraccionario asimétrico, NO 50/50
-          gridTemplateColumns: "1.2fr 1fr",
-          gap: "80px", alignItems: "center", width: "100%",
-          maxWidth: "1400px", margin: "0 auto",
-        }}>
+        {/* Content grid */}
+        <div style={{
+          position: "relative", zIndex: 1,
+          display: "grid", gridTemplateColumns: "1.1fr 1fr",
+          gap: "72px", alignItems: "center",
+          width: "100%", maxWidth: "1320px",
+          margin: "0 auto", padding: "64px 32px",
+        }} className="hero-grid">
 
-          {/* ─ Izquierda: contenido ─ */}
+          {/* ─ Left ─ */}
           <div>
             {/* Badge */}
-            <div className="stagger-item" style={{
-              display: "inline-flex", alignItems: "center", gap: "6px",
-              padding: "3px 10px 3px 5px", borderRadius: "99px",
-              border: "1px solid rgba(255,255,255,0.18)",
-              backgroundColor: "rgba(255,255,255,0.07)",
-              // Taste: inner refraction
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
-              marginBottom: "24px",
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: "8px",
+              background: "rgba(255,255,255,0.10)",
+              backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+              border: "1px solid rgba(255,255,255,0.20)",
+              borderRadius: "9999px", padding: "8px 16px",
+              marginBottom: "32px",
             }}>
+              <ShieldIcon />
               <span style={{
-                fontSize: "10px", fontWeight: 700, letterSpacing: "0.07em",
-                padding: "2px 8px", borderRadius: "99px",
-                backgroundColor: "#9B1B30", color: "#fff",
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15)",
-              }}>SUDESEG S-746</span>
-              <span style={{ fontSize: "11.5px", color: "rgba(255,255,255,0.65)" }}>Corretaje autorizado</span>
+                fontSize: "10px", fontWeight: 700,
+                letterSpacing: "0.1em", textTransform: "uppercase",
+                color: "white",
+              }}>
+                Inscritos ante la SUDEASEG · N° SCSMP-000002
+              </span>
             </div>
 
-            {/* Headline — Taste: NO gradient text en headers grandes */}
-            <h1 className="stagger-item" style={{
-              fontSize: "clamp(34px, 5vw, 62px)",
-              fontWeight: 800, letterSpacing: "-2.5px", lineHeight: 1.07,
-              color: "#fafafa", marginBottom: "20px",
-              // Taste: control de jerarquía por peso/color, NO escala excesiva
+            {/* H1 */}
+            <h1 style={{
+              fontFamily: "var(--font-playfair, Georgia, serif)",
+              fontSize: "clamp(40px, 5.5vw, 72px)",
+              fontWeight: 700, lineHeight: 1.1,
+              color: "white", marginBottom: "32px",
             }}>
-              El corredor que trabaja para ti,{" "}
-              <span style={{ color: "rgba(255,255,255,0.40)" }}>no para la aseguradora</span>
+              La tranquilidad de saber que tu futuro está protegido por manos expertas.
             </h1>
 
-            <p className="stagger-item" style={{
-              fontSize: "clamp(14px, 1.8vw, 16.5px)", lineHeight: 1.75,
-              color: "rgba(255,255,255,0.65)", maxWidth: "480px", marginBottom: "32px",
+            <p style={{
+              color: "rgba(255,255,255,0.80)", fontSize: "20px",
+              marginBottom: "48px", maxWidth: "512px", lineHeight: 1.6,
             }}>
-              Más de 20 años comparando el mercado asegurador venezolano para darte la cobertura que necesitas, al precio correcto.
+              Intermediación de seguros digitales y tradicionales con el respaldo de las aseguradoras más sólidas del país.
             </p>
 
-            <div className="stagger-item" style={{ display: "flex", gap: "9px", flexWrap: "wrap" }}>
-              <HeroPrimaryBtn href="/cotizar">
-                Cotizar gratis <ArrowRightIcon />
-              </HeroPrimaryBtn>
-              <Btn href="#nosotros" variant="ghost" style={{ padding: "12px 24px", fontSize: "14px", borderRadius: "10px" }}>
-                Conocer más
-              </Btn>
+            <div style={{ display: "flex", gap: "24px", alignItems: "center", flexWrap: "wrap" }}>
+              <a href="#planes" style={{
+                display: "inline-flex", alignItems: "center",
+                padding: "16px 40px", borderRadius: "4px",
+                backgroundColor: "white", color: "#3a1335",
+                fontSize: "14px", fontWeight: 700,
+                letterSpacing: "0.1em", textTransform: "uppercase",
+                textDecoration: "none",
+                transition: "opacity 150ms ease",
+              }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = "0.9")}
+                onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+              >
+                Explorar Planes
+              </a>
+              <a href="https://sudeaseg.gob.ve" target="_blank" rel="noopener noreferrer" style={{
+                display: "inline-flex", alignItems: "center", gap: "8px",
+                color: "rgba(255,255,255,0.80)", background: "transparent",
+                border: "none", fontSize: "14px", fontWeight: 600,
+                letterSpacing: "0.1em", textTransform: "uppercase",
+                textDecoration: "none", cursor: "pointer",
+                transition: "color 150ms ease",
+              }}
+                onMouseEnter={e => (e.currentTarget.style.color = "white")}
+                onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.80)")}
+              >
+                Registro SUDEASEG ↗
+              </a>
             </div>
           </div>
 
-          {/* ─ Derecha: Dashboard visual ─ */}
-          <div className="stagger-item hero-right" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-
-            {/* Card principal: cobertura */}
-            <div style={{
-              padding: "26px", borderRadius: "14px",
-              backgroundColor: "rgba(255,255,255,0.07)",
-              border: "1px solid rgba(255,255,255,0.11)",
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
+          {/* ─ Right: Cotizador Express ─ */}
+          <div id="cotizador" style={{
+            background: "rgba(255,255,255,0.95)",
+            backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+            padding: "48px",
+            borderRadius: "16px",
+            boxShadow: "0 25px 50px rgba(0,0,0,0.25)",
+            border: "1px solid rgba(255,255,255,0.10)",
+          }} className="hero-right">
+            <h2 style={{
+              fontFamily: "var(--font-playfair, Georgia, serif)",
+              fontSize: "30px", fontWeight: 700,
+              color: "#3a1335", marginBottom: "32px", textAlign: "center",
             }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "22px" }}>
-                <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", color: "rgba(255,255,255,0.45)", textTransform: "uppercase" as const }}>
-                  Cobertura activa
-                </p>
-                <span style={{
-                  fontSize: "10px", padding: "3px 9px", borderRadius: "99px", fontWeight: 700,
-                  backgroundColor: "rgba(16,185,129,0.1)", color: "#10b981",
-                  border: "1px solid rgba(16,185,129,0.18)",
-                }}>● Vigente</span>
+              Cotizador Express
+            </h2>
+
+            <div style={{ marginBottom: "24px" }}>
+              <label style={labelStyle}>Nombre Completo</label>
+              <input
+                type="text"
+                placeholder="Ej. Juan Pérez"
+                value={cotizadorNombre}
+                onChange={e => setCotizadorNombre(e.target.value)}
+                style={inputStyle}
+                onFocus={e => (e.currentTarget.style.borderBottomColor = "#3a1335")}
+                onBlur={e => (e.currentTarget.style.borderBottomColor = "#d2c2cb")}
+              />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "24px" }}>
+              <div>
+                <label style={labelStyle}>Ramo</label>
+                <select
+                  value={cotizadorRamo}
+                  onChange={e => setCotizadorRamo(e.target.value)}
+                  style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}
+                  onFocus={e => (e.currentTarget.style.borderBottomColor = "#3a1335")}
+                  onBlur={e => (e.currentTarget.style.borderBottomColor = "#d2c2cb")}
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="auto">Auto</option>
+                  <option value="persona">Persona</option>
+                  <option value="fianza">Fianza</option>
+                  <option value="patrimonio">Patrimonio</option>
+                </select>
               </div>
+              <div>
+                <label style={labelStyle}>Suma Asegurada ($)</label>
+                <input
+                  type="number"
+                  placeholder="Ej. 50,000"
+                  value={cotizadorSuma}
+                  onChange={e => setCotizadorSuma(e.target.value)}
+                  style={inputStyle}
+                  onFocus={e => (e.currentTarget.style.borderBottomColor = "#3a1335")}
+                  onBlur={e => (e.currentTarget.style.borderBottomColor = "#d2c2cb")}
+                />
+              </div>
+            </div>
 
-              {/* Coverage bars */}
-              {[
-                { label: "Automóvil", pct: 88, color: "#5b3cf5" },
-                { label: "Salud HCM", pct: 74, color: "#0d9488" },
-                { label: "Patrimoniales", pct: 61, color: "#b45309" },
-              ].map((item, i) => (
-                <div key={item.label} style={{ marginBottom: i < 2 ? "14px" : "0" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                    <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.55)" }}>{item.label}</span>
-                    <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", fontWeight: 600 }}>{item.pct}%</span>
-                  </div>
-                  <div style={{ height: "3px", backgroundColor: "rgba(255,255,255,0.05)", borderRadius: "99px", overflow: "hidden" }}>
-                    <div style={{
-                      height: "100%", borderRadius: "99px",
-                      backgroundColor: item.color,
-                      ["--bar-w" as string]: `${item.pct}%`,
-                      animation: `barGrow 700ms cubic-bezier(0.23,1,0.32,1) ${500 + i * 100}ms both`,
-                    }} />
-                  </div>
-                </div>
-              ))}
-
-              {/* Stats row */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "14px", marginTop: "22px", paddingTop: "20px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-                {STATS.slice(0, 2).map((s, i) => (
-                  <div key={s.label} style={{ animation: `fadeUp 400ms cubic-bezier(0.23,1,0.32,1) ${420 + i * 70}ms both` }}>
-                    <div style={{ fontSize: "24px", fontWeight: 800, letterSpacing: "-1.2px", color: "#fafafa", lineHeight: 1 }}>{s.valor}</div>
-                    <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", marginTop: "3px" }}>{s.label}</div>
-                  </div>
+            {/* Tipo selector (mantiene el estado cotizadorTipo) */}
+            <div style={{ marginBottom: "32px" }}>
+              <label style={labelStyle}>Tipo de Cliente</label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginTop: "8px" }}>
+                {[
+                  { id: "empresa", label: "Empresa" },
+                  { id: "persona", label: "Persona Natural" },
+                ].map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setCotizadorTipo(t.id)}
+                    style={{
+                      padding: "10px",
+                      borderRadius: "4px",
+                      border: `1px solid ${cotizadorTipo === t.id ? "#3a1335" : "#d2c2cb"}`,
+                      backgroundColor: cotizadorTipo === t.id ? "rgba(58,19,53,0.06)" : "transparent",
+                      color: cotizadorTipo === t.id ? "#3a1335" : "#4e444b",
+                      fontSize: "13px", fontWeight: cotizadorTipo === t.id ? 700 : 400,
+                      cursor: "pointer", transition: "all 140ms ease",
+                    }}
+                  >{t.label}</button>
                 ))}
               </div>
             </div>
 
-            {/* Fila inferior: 2 mini-cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-              {STATS.slice(2).map((s, i) => (
-                <div key={s.label} style={{
-                  padding: "18px 16px", borderRadius: "14px",
-                  backgroundColor: "rgba(255,255,255,0.07)",
-                  border: "1px solid rgba(255,255,255,0.11)",
-                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
-                  animation: `fadeUp 400ms cubic-bezier(0.23,1,0.32,1) ${560 + i * 70}ms both`,
-                }}>
-                  <div style={{ fontSize: "20px", fontWeight: 800, letterSpacing: "-1px", color: "#fafafa", lineHeight: 1 }}>{s.valor}</div>
-                  <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", marginTop: "4px" }}>{s.label}</div>
-                </div>
-              ))}
+            <button
+              onClick={() => { window.location.href = "/cotizar"; }}
+              style={{
+                width: "100%", background: "#3a1335",
+                color: "white", padding: "20px",
+                borderRadius: "12px", fontWeight: 700,
+                textTransform: "uppercase", letterSpacing: "0.2em",
+                fontSize: "12px", border: "none", cursor: "pointer",
+                transition: "opacity 150ms ease",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = "0.9")}
+              onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+            >
+              Ver Comparativa de Planes
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ════ TRUST BAND ════════════════════════════════════════════════════ */}
+      <div style={{
+        background: "#3a1335",
+        padding: "48px 32px",
+        borderTop: "1px solid rgba(255,255,255,0.05)",
+        borderBottom: "1px solid rgba(255,255,255,0.05)",
+      }}>
+        <div style={{
+          maxWidth: "1200px", margin: "0 auto",
+          display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
+          gap: "16px", textAlign: "center",
+        }} className="stats-grid">
+          {[
+            { valor: "20+", label: "Años de Trayectoria" },
+            { valor: "SUDEASEG", label: "Corretaje Certificado" },
+            { valor: "15+", label: "Aseguradoras Aliadas" },
+            { valor: "24/7", label: "Atención en Siniestros" },
+          ].map(s => (
+            <div key={s.label}>
+              <div style={{ fontSize: "30px", fontWeight: 700, color: "white" }}>{s.valor}</div>
               <div style={{
-                padding: "18px 16px", gridColumn: "1 / -1", display: "flex", flexWrap: "wrap" as const, gap: "6px",
-                borderRadius: "14px",
-                backgroundColor: "rgba(255,255,255,0.07)",
-                border: "1px solid rgba(255,255,255,0.11)",
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
+                fontSize: "10px", fontWeight: 700,
+                textTransform: "uppercase", letterSpacing: "0.1em",
+                color: "rgba(255,255,255,0.50)", marginTop: "8px",
+              }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ════ PLANES COMPARATIVOS (PRESERVADO) ══════════════════════════════ */}
+      <PlanesSection />
+
+      {/* ════ ABOUT / EXCELENCIA ════════════════════════════════════════════ */}
+      <section id="nosotros" style={{ padding: "96px 32px", background: "#fff7f9" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "80px", alignItems: "center" }} className="excelencia-grid">
+
+            {/* Left */}
+            <div>
+              <span style={{
+                color: "#3a1335", fontWeight: 700,
+                textTransform: "uppercase", letterSpacing: "0.1em",
+                fontSize: "12px", display: "block", marginBottom: "16px",
+              }}>Trayectoria Institucional</span>
+
+              <h2 style={{
+                fontFamily: "var(--font-playfair, Georgia, serif)",
+                fontSize: "clamp(32px, 4vw, 52px)", fontWeight: 700,
+                color: "#1f1a1d", marginBottom: "32px", lineHeight: 1.2,
               }}>
-                {RAMOS.map((r) => (
-                  <span key={r.titulo} style={{
-                    fontSize: "11px", padding: "3px 9px", borderRadius: "99px",
-                    border: "1px solid rgba(255,255,255,0.06)",
-                    backgroundColor: `${r.acento}0c`, color: r.acento,
-                    fontWeight: 500,
-                  }}>{r.titulo}</span>
-                ))}
+                Comprometidos con la excelencia en cada gestión.
+              </h2>
+
+              <p style={{ color: "#4e444b", fontSize: "18px", lineHeight: 1.6, marginBottom: "20px" }}>
+                Cabal Corretaje de Seguros, C.A. es un corredor independiente inscrito ante SUDEASEG bajo la licencia SCSMP-000002, con más de 20 años protegiendo empresas y familias venezolanas.
+              </p>
+              <p style={{ color: "#4e444b", fontSize: "18px", lineHeight: 1.6, marginBottom: "40px" }}>
+                Actuamos como intermediarios objetivos, sin ataduras con ninguna aseguradora, garantizando siempre la mejor cobertura al precio más competitivo del mercado.
+              </p>
+
+              <a href="#contacto" style={{
+                color: "#3a1335", fontWeight: 700,
+                textTransform: "uppercase", letterSpacing: "0.1em",
+                fontSize: "14px", display: "inline-flex",
+                alignItems: "center", gap: "12px",
+                textDecoration: "none", transition: "gap 150ms ease",
+              }}
+                onMouseEnter={e => (e.currentTarget.style.gap = "16px")}
+                onMouseLeave={e => (e.currentTarget.style.gap = "12px")}
+              >
+                Conoce más sobre nuestro equipo →
+              </a>
+            </div>
+
+            {/* Right — image + floating card */}
+            <div style={{ position: "relative" }}>
+              <img
+                src="https://lh3.googleusercontent.com/aida/AP1WRLv2qBeOucBNaCeNFzXwFcVUp6iIidCi8Xbn1XgweO9lr5n5lU_dkB2OXrtnIpdGinWpGq-qiT8q0xqHmu-4znZDMnAnHzPLpEo7POlCGp1-atGS7a2BkLEohS3EFiWNmBvg0T3xpTZjbvBZwUZrSPIlc2x9XSDmvIBPYoJBfAfnjclvcV5PJJODlCN27eEcHzFX2vgX2SgbqI_b0Y0YrOSUD09AKhgeY7ot7Mb7x2IrjGcJaBa9c8yosiid"
+                alt="Equipo Cabal"
+                style={{
+                  borderRadius: "16px", width: "100%",
+                  aspectRatio: "4/3", objectFit: "cover",
+                  boxShadow: "0 25px 50px rgba(58,19,53,0.15)",
+                  border: "1px solid #d2c2cb", display: "block",
+                }}
+              />
+              {/* Floating card */}
+              <div style={{
+                position: "absolute", bottom: "-40px", left: "-40px",
+                background: "white", padding: "24px",
+                borderRadius: "12px",
+                boxShadow: "0 25px 50px rgba(58,19,53,0.15)",
+                border: "1px solid #d2c2cb",
+                display: "flex", alignItems: "center", gap: "16px",
+              }}>
+                <div style={{
+                  width: "48px", height: "48px",
+                  borderRadius: "8px", background: "#3a1335",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                }}>
+                  <CheckIcon />
+                </div>
+                <div>
+                  <div style={{ fontSize: "14px", fontWeight: 700, color: "#1f1a1d" }}>Solidez Certificada</div>
+                  <div style={{
+                    fontSize: "10px", fontWeight: 700,
+                    textTransform: "uppercase", letterSpacing: "0.1em",
+                    color: "#4e444b", marginTop: "4px",
+                  }}>Inscritos ante la SUDEASEG</div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ════ SECCIONES ═════════════════════════════════════════════════════ */}
-      <AseguradorasBand />
-      <ServiciosSection />
-      <ComoFuncionaSection />
-      <NosotrosSection />
-      <CtaSection />
-      <ContactoSection />
+      {/* ════ RAMOS DE PROTECCIÓN ═══════════════════════════════════════════ */}
+      <section id="ramos" style={{ padding: "96px 32px", background: "#f5ebef" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: "56px" }}>
+            <h2 style={{
+              fontFamily: "var(--font-playfair, Georgia, serif)",
+              fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 700,
+              color: "#3a1335",
+            }}>
+              Nuestros Ramos de Protección
+            </h2>
+            <p style={{ color: "#4e444b", marginTop: "16px", fontSize: "18px" }}>
+              Soluciones integrales para personas y empresas
+            </p>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }} className="ramos-grid">
+            {RAMOS_CARDS.map((ramo, i) => (
+              <div
+                key={ramo.titulo}
+                onMouseEnter={() => setRamoHover(i)}
+                onMouseLeave={() => setRamoHover(null)}
+                style={{
+                  background: "white",
+                  borderRadius: "16px", overflow: "hidden",
+                  border: "1px solid #d2c2cb",
+                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                  transform: ramoHover === i ? "translateY(-8px)" : "translateY(0)",
+                  boxShadow: ramoHover === i
+                    ? "0 20px 40px rgba(58,19,53,0.1)"
+                    : "0 2px 8px rgba(58,19,53,0.04)",
+                  cursor: "default",
+                }}
+              >
+                {/* Image */}
+                <div style={{ position: "relative", height: "224px", overflow: "hidden" }}>
+                  <img
+                    src={ramo.img}
+                    alt={ramo.titulo}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                  <span style={{
+                    position: "absolute", top: "16px", left: "16px",
+                    background: "#3a1335", color: "white",
+                    fontSize: "11px", fontWeight: 700,
+                    padding: "4px 12px", borderRadius: "9999px",
+                  }}>{ramo.badge}</span>
+                </div>
+
+                {/* Body */}
+                <div style={{ padding: "28px" }}>
+                  <div style={{ marginBottom: "16px", color: "#3a1335" }}>
+                    {ramo.icon === "salud" && (
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                      </svg>
+                    )}
+                    {ramo.icon === "auto" && (
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v9a2 2 0 0 1-2 2h-2"/>
+                        <circle cx="9" cy="17" r="2"/><circle cx="17" cy="17" r="2"/>
+                      </svg>
+                    )}
+                    {ramo.icon === "patrimonio" && (
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                      </svg>
+                    )}
+                  </div>
+                  <h3 style={{
+                    fontFamily: "var(--font-playfair, Georgia, serif)",
+                    fontSize: "20px", fontWeight: 700,
+                    color: "#3a1335", marginBottom: "12px",
+                  }}>{ramo.titulo}</h3>
+                  <p style={{ color: "#4e444b", fontSize: "14px", lineHeight: 1.7, marginBottom: "20px" }}>
+                    {ramo.desc}
+                  </p>
+                  <a href="#contacto" style={{
+                    color: "#3a1335", fontWeight: 700,
+                    fontSize: "13px", letterSpacing: "0.05em",
+                    textDecoration: "none", display: "inline-flex",
+                    alignItems: "center", gap: "6px",
+                    transition: "gap 150ms ease",
+                  }}
+                    onMouseEnter={e => (e.currentTarget.style.gap = "10px")}
+                    onMouseLeave={e => (e.currentTarget.style.gap = "6px")}
+                  >
+                    Solicitar información <ArrowRightIcon />
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ════ #SIEMPRE PRESENTE ══════════════════════════════════════════════ */}
+      <section style={{
+        background: "#fbf1f5",
+        padding: "80px 32px",
+        borderTop: "1px solid #d2c2cb",
+        borderBottom: "1px solid #d2c2cb",
+        overflow: "hidden",
+        display: "flex", flexDirection: "column", alignItems: "center",
+        textAlign: "center",
+      }}>
+        <img
+          src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8r3kko52aPQ01e5x8xSZl7uEtHuK2GS02PMmdC5-3AgzRiQk3Ss_82eZEEw4-ykw13t06fJy51hcVaUYgAFzQhIsIZbWmuP3KdOY8zq3fCwXOmP_BatIBZ6S37UzhXL4gNO7dGtacciuaTRd3ziBa1JrB-p4PrSbHtLU_wiSoBQUV0-xMezbom36ACQC3aWdK77OjJYoozuzEYdRZASQ84eMSL2eY1Kr0zshttsAS6FsIRHhNGIeYr5yhZuZ1QVDUYNDaCOUlyae-cOI"
+          alt="#SiemprePresente"
+          style={{ height: "128px", width: "auto" }}
+        />
+        <div style={{
+          color: "rgba(58,19,53,0.60)", fontSize: "14px",
+          letterSpacing: "0.3em", fontWeight: 600,
+          textTransform: "uppercase", marginTop: "32px",
+        }}>
+          Cabal Corretaje de Seguros, C.A.
+        </div>
+        <div style={{
+          color: "rgba(58,19,53,0.40)", fontSize: "10px",
+          letterSpacing: "0.2em", fontWeight: 700,
+          textTransform: "uppercase", marginTop: "8px",
+        }}>
+          SUDEASEG SCSMP-000002
+        </div>
+      </section>
+
+      {/* ════ CONTACTO ══════════════════════════════════════════════════════ */}
+      <section id="contacto" style={{ padding: "96px 32px", background: "#fbf1f5" }}>
+        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "28px", alignItems: "start" }} className="contacto-grid-main">
+
+            {/* Left — dark card */}
+            <div style={{
+              background: "#3a1335", color: "white",
+              padding: "48px", borderRadius: "24px",
+              display: "flex", flexDirection: "column", justifyContent: "space-between",
+              boxShadow: "0 25px 50px rgba(0,0,0,0.25)",
+              minHeight: "500px",
+            }}>
+              <div>
+                <h2 style={{
+                  fontFamily: "var(--font-playfair, Georgia, serif)",
+                  fontSize: "clamp(28px, 3vw, 36px)", fontWeight: 700,
+                  marginBottom: "32px", lineHeight: 1.3,
+                }}>
+                  Atención inmediata cuando más nos necesita.
+                </h2>
+                <p style={{ color: "rgba(255,255,255,0.70)", marginBottom: "48px", fontSize: "18px", lineHeight: 1.6 }}>
+                  Nuestro equipo está disponible para acompañarle en todo momento, desde la cotización hasta la gestión de su siniestro.
+                </p>
+
+                {/* Phone */}
+                <div
+                  style={{ display: "flex", gap: "24px", alignItems: "center", marginBottom: "32px" }}
+                  onMouseEnter={() => setPhoneHover(true)}
+                  onMouseLeave={() => setPhoneHover(false)}
+                >
+                  <div style={{
+                    width: "64px", height: "64px", borderRadius: "9999px", flexShrink: 0,
+                    background: phoneHover ? "white" : "rgba(255,255,255,0.10)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "background 200ms ease",
+                  }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                      stroke={phoneHover ? "#3a1335" : "white"} strokeWidth="2"
+                      strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.56 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{
+                      fontSize: "10px", fontWeight: 700,
+                      textTransform: "uppercase", letterSpacing: "0.2em",
+                      color: "rgba(255,255,255,0.50)", marginBottom: "4px",
+                    }}>Teléfono</div>
+                    <a href="tel:+582125550100" style={{
+                      color: "white", textDecoration: "none",
+                      fontSize: "24px", fontWeight: 700,
+                    }}>+58 (212) 555-0100</a>
+                  </div>
+                </div>
+
+                {/* WhatsApp */}
+                <div
+                  style={{ display: "flex", gap: "24px", alignItems: "center" }}
+                  onMouseEnter={() => setWaHover(true)}
+                  onMouseLeave={() => setWaHover(false)}
+                >
+                  <div style={{
+                    width: "64px", height: "64px", borderRadius: "9999px", flexShrink: 0,
+                    background: waHover ? "white" : "rgba(255,255,255,0.10)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    transition: "background 200ms ease",
+                  }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24"
+                      fill={waHover ? "#3a1335" : "white"}>
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <div style={{
+                      fontSize: "10px", fontWeight: 700,
+                      textTransform: "uppercase", letterSpacing: "0.2em",
+                      color: "rgba(255,255,255,0.50)", marginBottom: "4px",
+                    }}>WhatsApp</div>
+                    <div style={{ fontSize: "24px", fontWeight: 700, color: "white" }}>
+                      Atención por Chat
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{
+                borderTop: "1px solid rgba(255,255,255,0.10)",
+                paddingTop: "32px", marginTop: "64px",
+                fontSize: "10px", fontWeight: 700,
+                textTransform: "uppercase", letterSpacing: "0.2em",
+                color: "rgba(255,255,255,0.40)",
+              }}>
+                CABAL CORRETAJE DE SEGUROS, C.A. | RIF: J-405144750
+              </div>
+            </div>
+
+            {/* Right — white form */}
+            <div style={{
+              background: "white", padding: "48px",
+              borderRadius: "24px", border: "1px solid #d2c2cb",
+              boxShadow: "0 20px 40px rgba(58,19,53,0.08)",
+            }}>
+              <h3 style={{
+                fontFamily: "var(--font-playfair, Georgia, serif)",
+                fontSize: "30px", fontWeight: 700,
+                color: "#3a1335", marginBottom: "32px",
+              }}>
+                Solicitar Asesoría Personalizada
+              </h3>
+
+              {sent ? (
+                <div style={{ textAlign: "center", padding: "48px 0" }}>
+                  <div style={{
+                    width: "64px", height: "64px", borderRadius: "9999px",
+                    background: "rgba(58,19,53,0.08)", border: "1px solid rgba(58,19,53,0.2)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    margin: "0 auto 16px", color: "#3a1335",
+                  }}><CheckIcon /></div>
+                  <p style={{ fontSize: "18px", fontWeight: 700, color: "#3a1335" }}>¡Solicitud enviada!</p>
+                  <p style={{ fontSize: "14px", color: "#4e444b", marginTop: "8px" }}>Le contactamos a la brevedad.</p>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+                    <div>
+                      <label style={labelStyle}>Nombre o Razón Social</label>
+                      <input
+                        type="text"
+                        value={formData.nombre}
+                        onChange={e => setFormData(p => ({ ...p, nombre: e.target.value }))}
+                        style={inputStyle}
+                        onFocus={e => (e.currentTarget.style.borderBottomColor = "#3a1335")}
+                        onBlur={e => (e.currentTarget.style.borderBottomColor = "#d2c2cb")}
+                      />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>RIF / Cédula</label>
+                      <input
+                        type="text"
+                        value={formData.rif}
+                        onChange={e => setFormData(p => ({ ...p, rif: e.target.value }))}
+                        style={inputStyle}
+                        onFocus={e => (e.currentTarget.style.borderBottomColor = "#3a1335")}
+                        onBlur={e => (e.currentTarget.style.borderBottomColor = "#d2c2cb")}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={labelStyle}>Correo Electrónico</label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={e => setFormData(p => ({ ...p, email: e.target.value }))}
+                      style={inputStyle}
+                      onFocus={e => (e.currentTarget.style.borderBottomColor = "#3a1335")}
+                      onBlur={e => (e.currentTarget.style.borderBottomColor = "#d2c2cb")}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={labelStyle}>Mensaje / Requerimiento</label>
+                    <textarea
+                      rows={4}
+                      value={formData.mensaje}
+                      onChange={e => setFormData(p => ({ ...p, mensaje: e.target.value }))}
+                      style={{ ...inputStyle, resize: "none" }}
+                      onFocus={e => (e.currentTarget.style.borderBottomColor = "#3a1335")}
+                      onBlur={e => (e.currentTarget.style.borderBottomColor = "#d2c2cb")}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={sending}
+                    style={{
+                      background: sending ? "#80747b" : "#3a1335",
+                      color: "white", width: "100%",
+                      padding: "20px", borderRadius: "12px",
+                      fontWeight: 700, textTransform: "uppercase",
+                      letterSpacing: "0.2em", fontSize: "12px",
+                      border: "none", cursor: sending ? "not-allowed" : "pointer",
+                      transition: "opacity 150ms ease",
+                    }}
+                    onMouseEnter={e => { if (!sending) e.currentTarget.style.opacity = "0.9"; }}
+                    onMouseLeave={e => { if (!sending) e.currentTarget.style.opacity = "1"; }}
+                  >
+                    {sending ? "Enviando…" : "Enviar Solicitud de Asesoría"}
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ════ FOOTER ════════════════════════════════════════════════════════ */}
       <footer style={{
-        borderTop: "1px solid rgba(255,255,255,0.08)",
-        backgroundColor: "#1A0830", padding: "26px 32px",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
+        background: "#3a1335", color: "white",
+        paddingTop: "96px", paddingBottom: "48px",
       }}>
-        <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{
-              backgroundColor: "white",
-              borderRadius: "5px",
-              padding: "3px 7px",
-              overflow: "hidden",
-              flexShrink: 0,
-              opacity: 0.85,
-            }}>
-              <Image src="/logos/logo-cabal.png" alt="Cabal" width={72} height={29} style={{ objectFit: "contain", display: "block" }} />
+        <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 32px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "48px", marginBottom: "64px" }} className="footer-grid">
+
+            {/* Col 1 — Brand */}
+            <div>
+              <img
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuARBmzp3-PUBOeHGYMmxYrkBXeST6FQRt-mgMwaJYuO_gMz_F3ULGK7HZS1PewGz3lVWgxx5Klb0jmuIU4Keo1wuZVp0ZTXTiGguBXCaADZGB9ZXStaYmC4felus7ThwMXVptWn5g0IqNufcmoSqsMapgfrpZ_CQz8Z_fhaULlbX4F39E-_uFv2VkYX_2ty85hQSJ7AnAETr-askKhpebrbkisPlhgxWGTxZskmlmUy_19CDKQrq0GF5chys1T3opGV7DfstmU1Bdc1"
+                alt="Cabal Logo"
+                style={{ filter: "brightness(0) invert(1)", height: "64px", width: "auto", marginBottom: "32px", display: "block" }}
+              />
+              <p style={{ color: "rgba(255,255,255,0.60)", fontSize: "14px", lineHeight: 1.7, marginBottom: "24px", maxWidth: "240px" }}>
+                Corretaje independiente de seguros con más de 20 años protegiendo empresas y familias venezolanas.
+              </p>
+              <div style={{ display: "flex", gap: "12px" }}>
+                {["in", "tw"].map(icon => (
+                  <a key={icon} href="#" style={{
+                    width: "40px", height: "40px", borderRadius: "9999px",
+                    border: "1px solid rgba(255,255,255,0.20)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "white", textDecoration: "none",
+                    fontSize: "12px", fontWeight: 700,
+                    transition: "background 200ms ease",
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "white"; e.currentTarget.style.color = "#3a1335"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "white"; }}
+                  >{icon.toUpperCase()}</a>
+                ))}
+              </div>
             </div>
-            <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)" }}>
-              © {new Date().getFullYear()} Cabal Corretaje de Seguros, C.A. · SUDESEG S-746
-            </span>
+
+            {/* Col 2 — Services */}
+            <div>
+              <h4 style={{ fontFamily: "var(--font-playfair, Georgia, serif)", fontSize: "18px", fontWeight: 700, marginBottom: "24px" }}>
+                Servicios
+              </h4>
+              {["Seguros de Salud (HCM)", "Seguros de Automóvil", "Riesgos Patrimoniales", "Fianzas y Garantías"].map(l => (
+                <a key={l} href="#ramos" style={{
+                  display: "block", color: "rgba(255,255,255,0.60)",
+                  fontSize: "14px", textDecoration: "none",
+                  marginBottom: "12px", transition: "color 150ms ease",
+                }}
+                  onMouseEnter={e => (e.currentTarget.style.color = "#ffd7f3")}
+                  onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.60)")}
+                >{l}</a>
+              ))}
+            </div>
+
+            {/* Col 3 — Institutional */}
+            <div>
+              <h4 style={{ fontFamily: "var(--font-playfair, Georgia, serif)", fontSize: "18px", fontWeight: 700, marginBottom: "24px" }}>
+                Institucional
+              </h4>
+              {["Registro SUDEASEG", "Aseguradoras Aliadas", "Políticas de Privacidad", "Gobierno Corporativo"].map(l => (
+                <a key={l} href="#nosotros" style={{
+                  display: "block", color: "rgba(255,255,255,0.60)",
+                  fontSize: "14px", textDecoration: "none",
+                  marginBottom: "12px", transition: "color 150ms ease",
+                }}
+                  onMouseEnter={e => (e.currentTarget.style.color = "#ffd7f3")}
+                  onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.60)")}
+                >{l}</a>
+              ))}
+            </div>
+
+            {/* Col 4 — Location */}
+            <div>
+              <h4 style={{ fontFamily: "var(--font-playfair, Georgia, serif)", fontSize: "18px", fontWeight: 700, marginBottom: "24px" }}>
+                Sede Principal
+              </h4>
+              <p style={{ color: "rgba(255,255,255,0.60)", fontSize: "14px", lineHeight: 1.7, marginBottom: "16px" }}>
+                Caracas, Venezuela<br />
+                RIF: J-405144750
+              </p>
+              {/* Map placeholder */}
+              <div style={{
+                border: "1px solid rgba(255,255,255,0.10)",
+                borderRadius: "8px",
+                aspectRatio: "16/9",
+                background: "rgba(255,255,255,0.04)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "rgba(255,255,255,0.30)", fontSize: "12px",
+              }}>
+                Ver en mapa
+              </div>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: "20px" }}>
-            {["Términos", "Privacidad"].map(l => (
-              <a key={l} href="#" style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", textDecoration: "none", transition: "color 130ms ease" }}
-                onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.65)")}
-                onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.35)")}>
-                {l}
-              </a>
-            ))}
+
+          {/* Bottom bar */}
+          <div style={{
+            borderTop: "1px solid rgba(255,255,255,0.10)",
+            paddingTop: "48px",
+            display: "flex", justifyContent: "space-between",
+            alignItems: "center", flexWrap: "wrap", gap: "24px",
+            fontSize: "10px", fontWeight: 700,
+            textTransform: "uppercase", letterSpacing: "0.2em",
+            color: "rgba(255,255,255,0.40)",
+          }}>
+            <span>© 2024 CABAL CORRETAJE DE SEGUROS. TODOS LOS DERECHOS RESERVADOS.</span>
+            <span>RIF: J-405144750 | SUDEASEG: SCSMP-000002</span>
           </div>
         </div>
       </footer>
 
-      {/* WhatsApp floating button */}
+      {/* WhatsApp float */}
       <WhatsAppBtn />
 
-      {/* ─── Responsive + Keyframes ─── */}
+      {/* ─── Global styles + Responsive ─── */}
       <style>{`
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(8px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes barGrow {
-          from { width: 0%; }
-          to   { width: var(--bar-w, 100%); }
-        }
         @keyframes whatsappPulse {
           0%   { transform: scale(1);   opacity: 0.7; }
           65%  { transform: scale(1.7); opacity: 0; }
           100% { transform: scale(1.7); opacity: 0; }
         }
 
-        /* Emil: hover guard */
-        @media (hover: none) {
-          .spotlight-card:hover { transform: none !important; }
+        @media (max-width: 1024px) {
+          .planes-grid    { grid-template-columns: 1fr 1fr !important; }
+          .footer-grid    { grid-template-columns: 1fr 1fr !important; gap: 32px !important; }
         }
 
         @media (max-width: 900px) {
-          .hero-grid  { grid-template-columns: 1fr !important; gap: 40px !important; }
-          .hero-right { display: none !important; }
+          .hero-grid         { grid-template-columns: 1fr !important; gap: 48px !important; }
+          .hero-right        { display: none !important; }
+          .excelencia-grid   { grid-template-columns: 1fr !important; gap: 44px !important; }
         }
 
         @media (max-width: 768px) {
-          .nosotros-grid { grid-template-columns: 1fr !important; gap: 44px !important; }
-          .ramos-row-1, .ramos-row-2 { grid-template-columns: 1fr !important; }
-          .contacto-grid  { grid-template-columns: 1fr !important; }
-          .pasos-grid     { grid-template-columns: 1fr 1fr !important; }
+          .stats-grid          { grid-template-columns: 1fr 1fr !important; }
+          .ramos-grid          { grid-template-columns: 1fr !important; }
+          .contacto-grid-main  { grid-template-columns: 1fr !important; gap: 40px !important; }
+          .planes-grid         { grid-template-columns: 1fr !important; }
+          .nav-desktop         { display: none !important; }
+          .nav-mobile          { display: block !important; }
         }
 
         @media (max-width: 480px) {
-          .pasos-grid { grid-template-columns: 1fr !important; }
+          .footer-grid { grid-template-columns: 1fr !important; }
+          .stats-grid  { grid-template-columns: 1fr 1fr !important; }
         }
 
-        /* Taste: prefers-reduced-motion */
         @media (prefers-reduced-motion: reduce) {
-          .stagger-item { animation: none !important; opacity: 1 !important; }
           * { transition-duration: 50ms !important; animation-duration: 50ms !important; }
         }
+
+        select option { color: #1f1a1d; }
+        ::placeholder { color: #80747b; }
       `}</style>
     </div>
   );
