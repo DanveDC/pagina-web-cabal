@@ -19,8 +19,8 @@ export default function LoginPage() {
     <div
       style={{
         minHeight: "100dvh",
-        backgroundColor: "#FAFAF9",
-        fontFamily: "var(--font-sans, system-ui)",
+        backgroundColor: "#fff7f9",
+        fontFamily: "var(--font-inter, var(--font-body, system-ui))",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -61,30 +61,34 @@ export default function LoginPage() {
         <div
           style={{
             backgroundColor: "#FFFFFF",
-            borderRadius: "16px",
-            border: "1px solid rgba(58,19,53,0.09)",
-            padding: "32px",
-            boxShadow: "0 4px 24px rgba(58,19,53,0.06)",
+            borderRadius: "8px",
+            border: "1px solid #d2c2cb",
+            padding: "36px 32px",
+            boxShadow: "0px 10px 40px rgba(58, 19, 53, 0.06)",
           }}
         >
           <h1
             style={{
-              fontSize: "20px",
-              fontWeight: 800,
-              letterSpacing: "-0.4px",
+              fontFamily: "var(--font-playfair, var(--font-display, Georgia, serif))",
+              fontSize: "24px",
+              fontWeight: 700,
+              letterSpacing: "-0.02em",
               color: "#3A1335",
               marginBottom: "6px",
             }}
           >
             Iniciar sesión
           </h1>
-          <p style={{ fontSize: "13.5px", color: "#4A464A", marginBottom: "24px" }}>
+          <p style={{ fontSize: "14px", color: "#4e444b", marginBottom: "28px", lineHeight: 1.5 }}>
             Accedé a tu cuenta de Cabal Asesores.
           </p>
 
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-              <label style={{ fontSize: "12px", fontWeight: 600, color: "#3A1335" }}>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{
+                fontSize: "11px", fontWeight: 600, color: "#3A1335",
+                letterSpacing: "0.10em", textTransform: "uppercase",
+              }}>
                 Correo electrónico
               </label>
               <input
@@ -95,23 +99,26 @@ export default function LoginPage() {
                 required
                 style={{
                   width: "100%",
-                  padding: "10px 12px",
-                  borderRadius: "10px",
-                  border: "1.5px solid rgba(58,19,53,0.14)",
-                  backgroundColor: "#FFFFFF",
-                  color: "#3A1335",
-                  fontSize: "13.5px",
+                  padding: "10px 0",
+                  background: "transparent",
+                  border: "none",
+                  borderBottom: "1.5px solid #d2c2cb",
+                  color: "#1f1a1d",
+                  fontSize: "14px",
                   outline: "none",
                   boxSizing: "border-box",
-                  transition: "border-color 150ms ease",
+                  transition: "border-color 200ms ease",
                 }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "#3A1335")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(58,19,53,0.14)")}
+                onFocus={(e) => { e.currentTarget.style.borderBottomColor = "#3A1335"; e.currentTarget.style.borderBottomWidth = "2px"; }}
+                onBlur={(e) => { e.currentTarget.style.borderBottomColor = "#d2c2cb"; e.currentTarget.style.borderBottomWidth = "1.5px"; }}
               />
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-              <label style={{ fontSize: "12px", fontWeight: 600, color: "#3A1335" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{
+                fontSize: "11px", fontWeight: 600, color: "#3A1335",
+                letterSpacing: "0.10em", textTransform: "uppercase",
+              }}>
                 Contraseña
               </label>
               <input
@@ -122,18 +129,18 @@ export default function LoginPage() {
                 required
                 style={{
                   width: "100%",
-                  padding: "10px 12px",
-                  borderRadius: "10px",
-                  border: "1.5px solid rgba(58,19,53,0.14)",
-                  backgroundColor: "#FFFFFF",
-                  color: "#3A1335",
-                  fontSize: "13.5px",
+                  padding: "10px 0",
+                  background: "transparent",
+                  border: "none",
+                  borderBottom: "1.5px solid #d2c2cb",
+                  color: "#1f1a1d",
+                  fontSize: "14px",
                   outline: "none",
                   boxSizing: "border-box",
-                  transition: "border-color 150ms ease",
+                  transition: "border-color 200ms ease",
                 }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "#3A1335")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(58,19,53,0.14)")}
+                onFocus={(e) => { e.currentTarget.style.borderBottomColor = "#3A1335"; e.currentTarget.style.borderBottomWidth = "2px"; }}
+                onBlur={(e) => { e.currentTarget.style.borderBottomColor = "#d2c2cb"; e.currentTarget.style.borderBottomWidth = "1.5px"; }}
               />
             </div>
 
@@ -143,19 +150,19 @@ export default function LoginPage() {
               style={{
                 width: "100%",
                 padding: "12px",
-                borderRadius: "12px",
+                borderRadius: "4px",
                 border: "none",
-                backgroundColor: loading ? "#C4B8D8" : "#3A1335",
+                backgroundColor: loading ? "#d2c2cb" : "#3A1335",
                 color: "#ffffff",
                 fontSize: "14px",
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: loading ? "not-allowed" : "pointer",
-                transition: "background-color 140ms ease, transform 100ms ease",
+                transition: "background-color 140ms ease, transform 140ms ease",
                 marginTop: "4px",
               }}
-              onMouseEnter={(e) => { if (!loading) e.currentTarget.style.backgroundColor = "#5A1D4F"; }}
-              onMouseLeave={(e) => { if (!loading) e.currentTarget.style.backgroundColor = "#3A1335"; }}
-              onMouseDown={(e) => { if (!loading) e.currentTarget.style.transform = "scale(0.98)"; }}
+              onMouseEnter={(e) => { if (!loading) { e.currentTarget.style.backgroundColor = "#5A1D4F"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
+              onMouseLeave={(e) => { if (!loading) { e.currentTarget.style.backgroundColor = "#3A1335"; e.currentTarget.style.transform = "translateY(0)"; } }}
+              onMouseDown={(e) => { if (!loading) e.currentTarget.style.transform = "scale(0.97)"; }}
               onMouseUp={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
             >
               {loading ? "Verificando…" : "Ingresar"}
@@ -172,7 +179,7 @@ export default function LoginPage() {
       </div>
 
       <style>{`
-        input::placeholder { color: #B0A8C8; }
+        input::placeholder { color: #80747b; }
       `}</style>
     </div>
   );
