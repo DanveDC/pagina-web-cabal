@@ -74,31 +74,37 @@ function Field({ label, type = "text", placeholder = "", hint = "", suffix = "" 
   label: string; type?: string; placeholder?: string; hint?: string; suffix?: string;
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-      <label style={{ fontSize: 12, fontWeight: 600, color: "#3A1335", letterSpacing: "0.01em" }}>{label}</label>
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <label style={{
+        fontSize: 11, fontWeight: 600, color: "#3A1335",
+        letterSpacing: "0.10em", textTransform: "uppercase" as const,
+      }}>{label}</label>
       <div style={{ position: "relative" }}>
         <input
           type={type}
           placeholder={placeholder || label}
           style={{
-            width: "100%", padding: suffix ? "10px 40px 10px 12px" : "10px 12px",
-            borderRadius: 10, border: "1.5px solid rgba(58,19,53,0.14)",
-            backgroundColor: "#FFFFFF", color: "#3A1335",
-            fontSize: 13.5, outline: "none",
-            transition: "border-color 150ms ease",
+            width: "100%",
+            padding: suffix ? "10px 40px 10px 0" : "10px 0",
+            background: "transparent",
+            border: "none",
+            borderBottom: "1.5px solid #d2c2cb",
+            color: "#1f1a1d",
+            fontSize: 14, outline: "none",
+            transition: "border-color 200ms ease",
             boxSizing: "border-box" as const,
           }}
-          onFocus={e  => (e.currentTarget.style.borderColor = "#3A1335")}
-          onBlur={e   => (e.currentTarget.style.borderColor = "rgba(58,19,53,0.14)")}
+          onFocus={e  => { e.currentTarget.style.borderBottomColor = "#3A1335"; e.currentTarget.style.borderBottomWidth = "2px"; }}
+          onBlur={e   => { e.currentTarget.style.borderBottomColor = "#d2c2cb"; e.currentTarget.style.borderBottomWidth = "1.5px"; }}
         />
         {suffix && (
           <span style={{
-            position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-            fontSize: 11, color: "#7A7A8A", fontWeight: 600, pointerEvents: "none",
+            position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)",
+            fontSize: 11, color: "#80747b", fontWeight: 600, pointerEvents: "none",
           }}>{suffix}</span>
         )}
       </div>
-      {hint && <p style={{ fontSize: 11, color: "#7A7A8A" }}>{hint}</p>}
+      {hint && <p style={{ fontSize: 11, color: "#80747b", marginTop: 2 }}>{hint}</p>}
     </div>
   );
 }
@@ -109,22 +115,28 @@ function Select({ label, options, hint = "" }: {
   hint?: string;
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-      <label style={{ fontSize: 12, fontWeight: 600, color: "#3A1335", letterSpacing: "0.01em" }}>{label}</label>
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <label style={{
+        fontSize: 11, fontWeight: 600, color: "#3A1335",
+        letterSpacing: "0.10em", textTransform: "uppercase" as const,
+      }}>{label}</label>
       <select style={{
-        width: "100%", padding: "10px 12px",
-        borderRadius: 10, border: "1.5px solid rgba(58,19,53,0.14)",
-        backgroundColor: "#FFFFFF", color: "#3A1335",
-        fontSize: 13.5, outline: "none", appearance: "none" as const,
+        width: "100%", padding: "10px 0",
+        background: "transparent",
+        border: "none",
+        borderBottom: "1.5px solid #d2c2cb",
+        color: "#1f1a1d",
+        fontSize: 14, outline: "none", appearance: "none" as const,
         boxSizing: "border-box" as const,
+        cursor: "pointer",
       }}
-        onFocus={e => (e.currentTarget.style.borderColor = "#3A1335")}
-        onBlur={e  => (e.currentTarget.style.borderColor = "rgba(58,19,53,0.14)")}
+        onFocus={e => { e.currentTarget.style.borderBottomColor = "#3A1335"; e.currentTarget.style.borderBottomWidth = "2px"; }}
+        onBlur={e  => { e.currentTarget.style.borderBottomColor = "#d2c2cb"; e.currentTarget.style.borderBottomWidth = "1.5px"; }}
       >
         <option value="">Seleccionar...</option>
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
-      {hint && <p style={{ fontSize: 11, color: "#7A7A8A" }}>{hint}</p>}
+      {hint && <p style={{ fontSize: 11, color: "#80747b", marginTop: 2 }}>{hint}</p>}
     </div>
   );
 }
@@ -138,16 +150,16 @@ function PrimaryBtn({ onClick, disabled = false, children }: {
       disabled={disabled}
       style={{
         width: "100%", padding: "12px 20px",
-        borderRadius: 12, border: "none",
-        backgroundColor: disabled ? "#C4B8D8" : "var(--cta-bg)",
-        color: "var(--cta-text)", fontSize: 14, fontWeight: 700,
+        borderRadius: 4, border: "none",
+        backgroundColor: disabled ? "#d2c2cb" : "#3A1335",
+        color: "#ffffff", fontSize: 14, fontWeight: 600,
         cursor: disabled ? "not-allowed" : "pointer",
-        transition: "background-color 140ms ease, transform 100ms ease",
+        transition: "background-color 140ms ease, transform 140ms ease",
         display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
       }}
-      onMouseEnter={e => { if (!disabled) e.currentTarget.style.backgroundColor = "var(--cta-hover)"; }}
-      onMouseLeave={e => { if (!disabled) e.currentTarget.style.backgroundColor = "var(--cta-bg)"; }}
-      onMouseDown={e  => { if (!disabled) e.currentTarget.style.transform = "scale(0.98)"; }}
+      onMouseEnter={e => { if (!disabled) { e.currentTarget.style.backgroundColor = "#5A1D4F"; e.currentTarget.style.transform = "translateY(-1px)"; } }}
+      onMouseLeave={e => { if (!disabled) { e.currentTarget.style.backgroundColor = "#3A1335"; e.currentTarget.style.transform = "translateY(0)"; } }}
+      onMouseDown={e  => { if (!disabled) e.currentTarget.style.transform = "scale(0.97)"; }}
       onMouseUp={e    => { e.currentTarget.style.transform = "scale(1)"; }}
     >
       {children}
@@ -189,7 +201,7 @@ export default function CotizarPage() {
   const currentStepNum = step === "results" ? 3 : (step as number);
 
   return (
-    <div style={{ minHeight: "100dvh", backgroundColor: "#FAFAF9", fontFamily: "var(--font-sans, system-ui)" }}>
+    <div style={{ minHeight: "100dvh", backgroundColor: "#fff7f9", fontFamily: "var(--font-inter, var(--font-body, system-ui))" }}>
 
       {/* ── HEADER ── */}
       <header style={{
@@ -534,13 +546,13 @@ export default function CotizarPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.10, duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
                   style={{
-                    borderRadius: 16,
-                    border: `1.5px solid ${oferta.destacado ? oferta.color + "35" : "rgba(58,19,53,0.10)"}`,
+                    borderRadius: 8,
+                    border: `1px solid ${oferta.destacado ? "#3A1335" : "#d2c2cb"}`,
                     backgroundColor: "#FFFFFF",
                     overflow: "hidden",
                     boxShadow: oferta.destacado
-                      ? `0 0 0 1px ${oferta.color}18, 0 8px 28px ${oferta.color}12`
-                      : "0 2px 8px rgba(58,19,53,0.06)",
+                      ? "0px 10px 40px rgba(58, 19, 53, 0.12)"
+                      : "0 2px 8px rgba(58,19,53,0.04)",
                   }}
                 >
                   {/* Barra de color */}
@@ -625,15 +637,23 @@ export default function CotizarPage() {
                     <button
                       style={{
                         width: "100%", padding: "11px 16px",
-                        borderRadius: 10,
-                        backgroundColor: oferta.destacado ? oferta.color : "transparent",
-                        color: oferta.destacado ? "#fff" : oferta.color,
-                        border: oferta.destacado ? "none" : `1.5px solid ${oferta.color}30`,
-                        fontSize: 13.5, fontWeight: 700, cursor: "pointer",
-                        transition: "opacity 140ms ease",
+                        borderRadius: 4,
+                        backgroundColor: oferta.destacado ? "#C2A378" : "transparent",
+                        color: oferta.destacado ? "#fff" : "#3A1335",
+                        border: oferta.destacado ? "none" : "1.5px solid #d2c2cb",
+                        fontSize: 13.5, fontWeight: 600, cursor: "pointer",
+                        transition: "background-color 140ms ease, border-color 140ms ease, transform 140ms ease",
                       }}
-                      onMouseEnter={e => (e.currentTarget.style.opacity = "0.88")}
-                      onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+                      onMouseEnter={e => {
+                        if (oferta.destacado) { e.currentTarget.style.backgroundColor = "#B8956A"; }
+                        else { e.currentTarget.style.borderColor = "#3A1335"; }
+                        e.currentTarget.style.transform = "translateY(-1px)";
+                      }}
+                      onMouseLeave={e => {
+                        if (oferta.destacado) { e.currentTarget.style.backgroundColor = "#C2A378"; }
+                        else { e.currentTarget.style.borderColor = "#d2c2cb"; }
+                        e.currentTarget.style.transform = "translateY(0)";
+                      }}
                     >
                       Solicitar esta póliza →
                     </button>
@@ -663,8 +683,8 @@ export default function CotizarPage() {
         @media (max-width: 480px) {
           .sm\\:inline { display: inline !important; }
         }
-        input::placeholder { color: #B0A8C8; }
-        select option { color: #3A1335; }
+        input::placeholder { color: #80747b; }
+        select option { color: #1f1a1d; }
       `}</style>
     </div>
   );
