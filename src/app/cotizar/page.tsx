@@ -1,59 +1,88 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { segurosCaracasClient } from "@/lib/api/seguros-caracas";
+import { PERSONA_EMPTY } from "@/types/seguros-caracas";
+import type { HogarFormState, SuscribirPersona, Propuesta, Ciudad, Sector } from "@/types/seguros-caracas";
+
+// ─── CREDENTIALS ─────────────────────────────────────────────────────────────
+// Fill these in when Seguros Caracas provides the broker credentials.
+const SC_PRODUCTOR = "";
+const SC_CONVENIO  = "";
+const CREDENTIALS_READY = Boolean(SC_PRODUCTOR && SC_CONVENIO);
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
-
 type Ramo = "automovil" | "salud" | "hogar" | "patrimoniales";
 type Step = 1 | 2 | 3 | "results";
 
-// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+interface EmpresaForm {
+  razonSocial: string; rif: string; empleados: string;
+  sector: string; facturacion: string; email: string; telefono: string;
+}
+interface AutoForm {
+  marca: string; modelo: string; anio: string;
+  valor: string; uso: string; nVehiculos: string;
+}
+interface SaludForm { nAsegurados: string; edadPromedio: string; cobertura: string; }
+interface PatrimonialForm { tipoRiesgo: string; valorBienes: string; direccion: string; metros: string; }
+interface OfertaDisplay {
+  nombre: string; siglas: string; color: string;
+  prima_anual: number; prima_mensual: number;
+  tag: string; score: number;
+  coberturas: { label: string; valor: string }[];
+  destacado: boolean;
+}
 
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const RAMOS: { id: Ramo; label: string; desc: string; color: string; icon: string }[] = [
-  { id: "automovil",     label: "Automóvil",     desc: "Flota vehicular e individuales",    color: "#5B3AF5", icon: "🚗" },
-  { id: "salud",         label: "Salud",          desc: "HCM colectivo para tu equipo",      color: "#059669", icon: "❤️" },
-  { id: "hogar",         label: "Hogar",          desc: "Residenciales y comerciales",       color: "#D97706", icon: "🏠" },
-  { id: "patrimoniales", label: "Patrimoniales",  desc: "Bienes y responsabilidad civil",    color: "#0284C7", icon: "🏢" },
+  { id: "automovil",     label: "Automóvil",    desc: "Flota vehicular e individuales",  color: "#5B3AF5", icon: "🚗" },
+  { id: "salud",         label: "Salud",         desc: "HCM colectivo para tu equipo",    color: "#059669", icon: "❤️" },
+  { id: "hogar",         label: "Hogar",         desc: "Residenciales y comerciales",     color: "#D97706", icon: "🏠" },
+  { id: "patrimoniales", label: "Patrimoniales", desc: "Bienes y responsabilidad civil",  color: "#0284C7", icon: "🏢" },
 ];
 
 const STEPS = ["Empresa", "Ramo", "Detalles"];
 
-const OFERTAS = [
+const OFERTAS_PLACEHOLDER: OfertaDisplay[] = [
   {
-    nombre: "Seguros Caracas",    siglas: "SC", color: "#3A1335",
-    prima_anual: 1_240, prima_mensual: 103, tag: "Recomendada", score: 94,
+    nombre: "Seguros Caracas", siglas: "SC", color: "#3A1335",
+    prima_anual: 0, prima_mensual: 0, tag: "Pendiente", score: 94,
     coberturas: [
-      { label: "Suma asegurada",         valor: "[ Placeholder: $XX,XXX ]" },
-      { label: "Deducible",              valor: "[ Placeholder: X% ]"      },
-      { label: "Red clínica",            valor: "[ Placeholder: XXX clínicas ]" },
-      { label: "Cobertura internacional",valor: "Incluida"                  },
+      { label: "Suma asegurada",          valor: "— pendiente de credenciales —" },
+      { label: "Deducible",               valor: "— pendiente de credenciales —" },
+      { label: "Red clínica",             valor: "— pendiente de credenciales —" },
+      { label: "Cobertura internacional", valor: "Incluida" },
     ],
     destacado: true,
   },
 ];
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────────
-
-const fadeSlide = {
-  initial: { opacity: 0, x: 16 },
-  animate: { opacity: 1, x: 0 },
-  exit:    { opacity: 0, x: -16 },
-  transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] as number[] },
+const HOGAR_INIT: HogarFormState = {
+  inmueble: {
+    cdEstado: "", deEstado: "", cdCiudad: "", deCiudad: "",
+    cdSector: "", deSector: "", cdPostal: "", x: "", y: "",
+    cdIndole: "", deInmueble: "", deCalle: "", deDireccion1: "", deDireccion2: "",
+  },
+  asegurado: { ...PERSONA_EMPTY },
+  tomadorIgualAsegurado: true,
+  tomador: { ...PERSONA_EMPTY },
 };
 
+// ─── ANIMATION PRESETS ────────────────────────────────────────────────────────
+const fadeSlide = {
+  initial: { opacity: 0, x: 16 }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -16 },
+  transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] as number[] },
+};
 const fadeUp = {
-  initial: { opacity: 0, y: 14 },
-  animate: { opacity: 1, y: 0 },
-  exit:    { opacity: 0, y: -10 },
+  initial: { opacity: 0, y: 14 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -10 },
   transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] as number[] },
 };
 
 // ─── SMALL COMPONENTS ─────────────────────────────────────────────────────────
-
 function StepDot({ n, active, done }: { n: number; active: boolean; done: boolean }) {
-  const bg    = done ? "#3A1335" : active ? "rgba(58,19,53,0.10)" : "rgba(58,19,53,0.07)";
+  const bg     = done ? "#3A1335" : active ? "rgba(58,19,53,0.10)" : "rgba(58,19,53,0.07)";
   const border = active || done ? "#3A1335" : "rgba(58,19,53,0.15)";
   const color  = done ? "#fff" : active ? "#3A1335" : "#7A7A8A";
   return (
@@ -70,8 +99,11 @@ function StepDot({ n, active, done }: { n: number; active: boolean; done: boolea
   );
 }
 
-function Field({ label, type = "text", placeholder = "", hint = "", suffix = "" }: {
-  label: string; type?: string; placeholder?: string; hint?: string; suffix?: string;
+function Field({
+  label, type = "text", placeholder = "", hint = "", suffix = "", value = "", onChange,
+}: {
+  label: string; type?: string; placeholder?: string; hint?: string;
+  suffix?: string; value?: string; onChange?: (v: string) => void;
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -83,19 +115,17 @@ function Field({ label, type = "text", placeholder = "", hint = "", suffix = "" 
         <input
           type={type}
           placeholder={placeholder || label}
+          value={value}
+          onChange={e => onChange?.(e.target.value)}
           style={{
-            width: "100%",
-            padding: suffix ? "10px 40px 10px 0" : "10px 0",
-            background: "transparent",
-            border: "none",
+            width: "100%", padding: suffix ? "10px 40px 10px 0" : "10px 0",
+            background: "transparent", border: "none",
             borderBottom: "1.5px solid #d2c2cb",
-            color: "#1f1a1d",
-            fontSize: 14, outline: "none",
-            transition: "border-color 200ms ease",
-            boxSizing: "border-box" as const,
+            color: "#1f1a1d", fontSize: 14, outline: "none",
+            transition: "border-color 200ms ease", boxSizing: "border-box" as const,
           }}
-          onFocus={e  => { e.currentTarget.style.borderBottomColor = "#3A1335"; e.currentTarget.style.borderBottomWidth = "2px"; }}
-          onBlur={e   => { e.currentTarget.style.borderBottomColor = "#d2c2cb"; e.currentTarget.style.borderBottomWidth = "1.5px"; }}
+          onFocus={e => { e.currentTarget.style.borderBottomColor = "#3A1335"; e.currentTarget.style.borderBottomWidth = "2px"; }}
+          onBlur={e  => { e.currentTarget.style.borderBottomColor = "#d2c2cb"; e.currentTarget.style.borderBottomWidth = "1.5px"; }}
         />
         {suffix && (
           <span style={{
@@ -109,10 +139,11 @@ function Field({ label, type = "text", placeholder = "", hint = "", suffix = "" 
   );
 }
 
-function Select({ label, options, hint = "" }: {
-  label: string;
-  options: { value: string; label: string }[];
-  hint?: string;
+function Select({
+  label, options, hint = "", value = "", onChange, loading: loadingOpts = false,
+}: {
+  label: string; options: { value: string; label: string }[];
+  hint?: string; value?: string; onChange?: (v: string) => void; loading?: boolean;
 }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -120,20 +151,25 @@ function Select({ label, options, hint = "" }: {
         fontSize: 11, fontWeight: 600, color: "#3A1335",
         letterSpacing: "0.10em", textTransform: "uppercase" as const,
       }}>{label}</label>
-      <select style={{
-        width: "100%", padding: "10px 0",
-        background: "transparent",
-        border: "none",
-        borderBottom: "1.5px solid #d2c2cb",
-        color: "#1f1a1d",
-        fontSize: 14, outline: "none", appearance: "none" as const,
-        boxSizing: "border-box" as const,
-        cursor: "pointer",
-      }}
+      <select
+        value={value}
+        onChange={e => onChange?.(e.target.value)}
+        disabled={loadingOpts}
+        style={{
+          width: "100%", padding: "10px 0",
+          background: "transparent", border: "none",
+          borderBottom: "1.5px solid #d2c2cb",
+          color: value ? "#1f1a1d" : "#80747b",
+          fontSize: 14, outline: "none", appearance: "none" as const,
+          boxSizing: "border-box" as const,
+          cursor: loadingOpts ? "wait" : "pointer",
+          opacity: loadingOpts ? 0.5 : 1,
+          transition: "opacity 150ms ease",
+        }}
         onFocus={e => { e.currentTarget.style.borderBottomColor = "#3A1335"; e.currentTarget.style.borderBottomWidth = "2px"; }}
         onBlur={e  => { e.currentTarget.style.borderBottomColor = "#d2c2cb"; e.currentTarget.style.borderBottomWidth = "1.5px"; }}
       >
-        <option value="">Seleccionar...</option>
+        <option value="">{loadingOpts ? "Cargando…" : "Seleccionar…"}</option>
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
       {hint && <p style={{ fontSize: 11, color: "#80747b", marginTop: 2 }}>{hint}</p>}
@@ -149,8 +185,7 @@ function PrimaryBtn({ onClick, disabled = false, children }: {
       onClick={onClick}
       disabled={disabled}
       style={{
-        width: "100%", padding: "12px 20px",
-        borderRadius: 4, border: "none",
+        width: "100%", padding: "12px 20px", borderRadius: 4, border: "none",
         backgroundColor: disabled ? "#d2c2cb" : "#3A1335",
         color: "#ffffff", fontSize: 14, fontWeight: 600,
         cursor: disabled ? "not-allowed" : "pointer",
@@ -169,36 +204,256 @@ function PrimaryBtn({ onClick, disabled = false, children }: {
 
 function BackBtn({ onClick }: { onClick: () => void }) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        display: "inline-flex", alignItems: "center", gap: 5,
-        background: "none", border: "none", cursor: "pointer",
-        fontSize: 13, color: "#4A464A", marginBottom: 20, padding: 0,
-      }}
-    >
+    <button onClick={onClick} style={{
+      display: "inline-flex", alignItems: "center", gap: 5,
+      background: "none", border: "none", cursor: "pointer",
+      fontSize: 13, color: "#4A464A", marginBottom: 20, padding: 0,
+    }}>
       ← Atrás
     </button>
   );
 }
 
-// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <p style={{
+      fontSize: 10.5, fontWeight: 700, letterSpacing: "0.12em",
+      textTransform: "uppercase" as const, color: "#3A1335",
+      paddingBottom: 8, borderBottom: "1px solid rgba(58,19,53,0.10)", marginTop: 8,
+    }}>
+      {children}
+    </p>
+  );
+}
 
+function CheckToggle({ label, checked, onChange }: {
+  label: string; checked: boolean; onChange: (v: boolean) => void;
+}) {
+  return (
+    <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+      <div
+        onClick={() => onChange(!checked)}
+        style={{
+          width: 18, height: 18, borderRadius: 4, flexShrink: 0,
+          border: `1.5px solid ${checked ? "#3A1335" : "#d2c2cb"}`,
+          backgroundColor: checked ? "#3A1335" : "transparent",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          transition: "all 140ms ease",
+        }}
+      >
+        {checked && <span style={{ color: "white", fontSize: 10, lineHeight: 1 }}>✓</span>}
+      </div>
+      <span style={{ fontSize: 13, color: "#4A464A", lineHeight: 1.4 }}>{label}</span>
+    </label>
+  );
+}
+
+// ─── PERSONA FIELDS (reutilizable para asegurado y tomador) ───────────────────
+function PersonaFields({
+  data, onChange,
+}: {
+  data: SuscribirPersona;
+  onChange: (k: keyof SuscribirPersona, v: string) => void;
+}) {
+  const NAC_OPTS = [
+    { value: "V", label: "V — Venezolano/a" },
+    { value: "E", label: "E — Extranjero/a" },
+    { value: "J", label: "J — Jurídico" },
+    { value: "G", label: "G — Gubernamental" },
+  ];
+  const SEXO_OPTS = [
+    { value: "M", label: "Masculino" },
+    { value: "F", label: "Femenino" },
+    { value: "X", label: "Persona jurídica" },
+  ];
+  const CIVIL_OPTS = [
+    { value: "S", label: "Soltero/a" },
+    { value: "C", label: "Casado/a" },
+    { value: "D", label: "Divorciado/a" },
+    { value: "V", label: "Viudo/a" },
+    { value: "U", label: "Unión estable" },
+  ];
+  return (
+    <>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <Select label="Nacionalidad" options={NAC_OPTS}
+          value={data.nacionalidad} onChange={v => onChange("nacionalidad", v)} />
+        <Field label="Cédula / RIF" type="number"
+          value={data.cedulaRif ? String(data.cedulaRif) : ""}
+          onChange={v => onChange("cedulaRif", v)} />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <Field label="Nombres" value={data.nombres} onChange={v => onChange("nombres", v)} />
+        <Field label="Apellidos / Razón Social"
+          value={data.apellidosRazonSocial} onChange={v => onChange("apellidosRazonSocial", v)} />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <Select label="Sexo" options={SEXO_OPTS} value={data.sexo} onChange={v => onChange("sexo", v)} />
+        <Select label="Estado civil" options={CIVIL_OPTS} value={data.edoCivil} onChange={v => onChange("edoCivil", v)} />
+      </div>
+      <Field label="Fecha de nacimiento" placeholder="DD/MM/YYYY"
+        hint="Dejar en blanco si es persona jurídica"
+        value={data.feNacimiento} onChange={v => onChange("feNacimiento", v)} />
+      <Field label="Correo electrónico" type="email"
+        value={data.email} onChange={v => onChange("email", v)} />
+      <Field label="Dirección de residencia"
+        value={data.direccion} onChange={v => onChange("direccion", v)} />
+      <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: 12 }}>
+        <Field label="Cód. área" placeholder="212"
+          value={data.cdAreaTlf} onChange={v => onChange("cdAreaTlf", v)} />
+        <Field label="Teléfono" type="tel"
+          value={data.nuTlf} onChange={v => onChange("nuTlf", v)} />
+      </div>
+      <Field label="Profesión" hint="Dejar en blanco si es persona jurídica"
+        value={data.profesion} onChange={v => onChange("profesion", v)} />
+    </>
+  );
+}
+
+// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function CotizarPage() {
-  const [step, setStep]   = useState<Step>(1);
-  const [ramo, setRamo]   = useState<Ramo | null>(null);
+  const [step, setStep]       = useState<Step>(1);
+  const [ramo, setRamo]       = useState<Ramo | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleCalcular = async () => {
-    setLoading(true);
-    await new Promise(r => setTimeout(r, 2200));
-    setLoading(false);
-    setStep("results");
+  // ── Form state ───────────────────────────────────────────────────────────────
+  const [empresa, setEmpresa] = useState<EmpresaForm>({
+    razonSocial: "", rif: "", empleados: "", sector: "", facturacion: "", email: "", telefono: "",
+  });
+  const [autoData,         setAutoData]         = useState<AutoForm>({ marca: "", modelo: "", anio: "", valor: "", uso: "", nVehiculos: "" });
+  const [saludData,        setSaludData]        = useState<SaludForm>({ nAsegurados: "", edadPromedio: "", cobertura: "" });
+  const [hogarData,        setHogarData]        = useState<HogarFormState>(HOGAR_INIT);
+  const [patrimonialData,  setPatrimonialData]  = useState<PatrimonialForm>({ tipoRiesgo: "", valorBienes: "", direccion: "", metros: "" });
+
+  // ── API state — hogar selects ─────────────────────────────────────────────
+  const [estadoOpts,      setEstadoOpts]      = useState<{ value: string; label: string }[]>([]);
+  const [indoleOpts,      setIndoleOpts]      = useState<{ value: string; label: string }[]>([]);
+  const [ciudades,        setCiudades]        = useState<Ciudad[]>([]);
+  const [sectores,        setSectores]        = useState<Sector[]>([]);
+  const [loadingCiudades, setLoadingCiudades] = useState(false);
+  const [loadingSectores, setLoadingSectores] = useState(false);
+
+  // ── Results ──────────────────────────────────────────────────────────────────
+  const [propuestasApi, setPropuestasApi] = useState<Propuesta[] | null>(null);
+
+  // ── Effects — hogar API calls ─────────────────────────────────────────────
+  useEffect(() => {
+    if (ramo !== "hogar") return;
+    segurosCaracasClient.getListasIniciales().then(res => {
+      if ("estados" in res) {
+        setEstadoOpts(res.estados.map(e => ({ value: e.codigo, label: e.descripcion })));
+        setIndoleOpts(res.indoles.map(i => ({ value: i.codigo, label: i.descripcion })));
+      }
+    });
+  }, [ramo]);
+
+  useEffect(() => {
+    const cdEstado = hogarData.inmueble.cdEstado;
+    if (!cdEstado) { setCiudades([]); setSectores([]); return; }
+    setLoadingCiudades(true);
+    setCiudades([]);
+    setSectores([]);
+    setHogarData(p => ({ ...p, inmueble: { ...p.inmueble, cdCiudad: "", deCiudad: "", cdSector: "", deSector: "" } }));
+    segurosCaracasClient.getCiudades(cdEstado).then(res => {
+      if ("ciudades" in res) setCiudades(res.ciudades);
+    }).finally(() => setLoadingCiudades(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hogarData.inmueble.cdEstado]);
+
+  useEffect(() => {
+    const { cdEstado, cdCiudad } = hogarData.inmueble;
+    if (!cdEstado || !cdCiudad) { setSectores([]); return; }
+    setLoadingSectores(true);
+    setSectores([]);
+    setHogarData(p => ({ ...p, inmueble: { ...p.inmueble, cdSector: "", deSector: "" } }));
+    segurosCaracasClient.getSectores(cdEstado, cdCiudad).then(res => {
+      if ("sectores" in res) setSectores(res.sectores);
+    }).finally(() => setLoadingSectores(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hogarData.inmueble.cdCiudad]);
+
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+  const updE = (k: keyof EmpresaForm,     v: string) => setEmpresa(p        => ({ ...p, [k]: v }));
+  const updA = (k: keyof AutoForm,        v: string) => setAutoData(p       => ({ ...p, [k]: v }));
+  const updS = (k: keyof SaludForm,       v: string) => setSaludData(p      => ({ ...p, [k]: v }));
+  const updP = (k: keyof PatrimonialForm, v: string) => setPatrimonialData(p => ({ ...p, [k]: v }));
+
+  const updHI = (k: keyof HogarFormState["inmueble"], v: string) =>
+    setHogarData(p => ({ ...p, inmueble: { ...p.inmueble, [k]: v } }));
+
+  const updHA = (k: keyof SuscribirPersona, v: string) =>
+    setHogarData(p => ({ ...p, asegurado: { ...p.asegurado, [k]: v } }));
+
+  const updHT = (k: keyof SuscribirPersona, v: string) =>
+    setHogarData(p => ({ ...p, tomador: { ...p.tomador, [k]: v } }));
+
+  const handleEstadoChange = (cdEstado: string) => {
+    const deEstado = estadoOpts.find(o => o.value === cdEstado)?.label ?? "";
+    updHI("cdEstado", cdEstado);
+    updHI("deEstado", deEstado);
   };
 
-  const resetForm = () => { setStep(1); setRamo(null); };
+  const handleCiudadChange = (cdCiudad: string) => {
+    const ciudad = ciudades.find(c => c.codigo === cdCiudad);
+    updHI("cdCiudad", cdCiudad);
+    updHI("deCiudad", ciudad?.descripcion ?? "");
+    updHI("cdPostal", ciudad?.cdPostal ?? "");
+    updHI("x", ciudad?.x ?? "");
+    updHI("y", ciudad?.y ?? "");
+  };
+
+  const handleSectorChange = (cdSector: string) => {
+    const sector = sectores.find(s => s.codigo === cdSector);
+    updHI("cdSector", cdSector);
+    updHI("deSector", sector?.descripcion ?? "");
+  };
+
+  const handleCalcular = async () => {
+    if (!CREDENTIALS_READY) return;
+    setLoading(true);
+    try {
+      const res = await segurosCaracasClient.getPropuestas(SC_PRODUCTOR, SC_CONVENIO);
+      if ("propuestas" in res) setPropuestasApi(res.propuestas);
+    } catch {
+      // Fall through — show placeholder on API error
+    } finally {
+      setLoading(false);
+      setStep("results");
+    }
+  };
+
+  const resetForm = () => {
+    setStep(1); setRamo(null);
+    setEmpresa({ razonSocial: "", rif: "", empleados: "", sector: "", facturacion: "", email: "", telefono: "" });
+    setAutoData({ marca: "", modelo: "", anio: "", valor: "", uso: "", nVehiculos: "" });
+    setSaludData({ nAsegurados: "", edadPromedio: "", cobertura: "" });
+    setHogarData(HOGAR_INIT);
+    setPatrimonialData({ tipoRiesgo: "", valorBienes: "", direccion: "", metros: "" });
+    setPropuestasApi(null);
+    setCiudades([]); setSectores([]);
+  };
 
   const currentStepNum = step === "results" ? 3 : (step as number);
+
+  // ── Display cards (placeholder until credentials are ready + API returns) ────
+  const displayCards: OfertaDisplay[] = propuestasApi
+    ? propuestasApi.map(p => ({
+        nombre: p.deConvenio,
+        siglas: "SC",
+        color: "#3A1335",
+        prima_anual: p.mtPrima,
+        prima_mensual: p.frecuencias.find(f => f.cdFrPago === "M")?.mtPrima ?? Math.round(p.mtPrima / 12),
+        tag: p.nmPropuesta,
+        score: 94,
+        coberturas: [
+          { label: "Moneda",       valor: p.cdMoneda },
+          { label: "N° Propuesta", valor: p.nmPropuesta },
+          { label: "Tasa cambio",  valor: p.taCambio > 0 ? String(p.taCambio) : "—" },
+          { label: "Convenio",     valor: String(p.cdConvenio) },
+        ],
+        destacado: true,
+      }))
+    : OFERTAS_PLACEHOLDER;
 
   return (
     <div style={{ minHeight: "100dvh", backgroundColor: "#fff7f9", fontFamily: "var(--font-inter, var(--font-body, system-ui))" }}>
@@ -210,8 +465,7 @@ export default function CotizarPage() {
         padding: "0 24px",
         backgroundColor: "rgba(255,255,255,0.92)",
         borderBottom: "1px solid rgba(58,19,53,0.09)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
+        backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
       }}>
         <a href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
           <div style={{
@@ -231,10 +485,12 @@ export default function CotizarPage() {
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
           <div style={{
             width: 7, height: 7, borderRadius: "50%",
-            backgroundColor: "#059669",
+            backgroundColor: CREDENTIALS_READY ? "#059669" : "#D97706",
             animation: "pulse 2s ease-in-out infinite",
           }} />
-          <span style={{ fontSize: 12, color: "#4A464A", fontWeight: 500 }}>Sistema operativo</span>
+          <span style={{ fontSize: 12, color: "#4A464A", fontWeight: 500 }}>
+            {CREDENTIALS_READY ? "Sistema operativo" : "En configuración"}
+          </span>
         </div>
       </header>
 
@@ -245,8 +501,8 @@ export default function CotizarPage() {
         {step !== "results" && (
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 36 }}>
             {STEPS.map((label, i) => {
-              const n    = i + 1;
-              const done = currentStepNum > n;
+              const n      = i + 1;
+              const done   = currentStepNum > n;
               const active = currentStepNum === n;
               return (
                 <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -256,9 +512,7 @@ export default function CotizarPage() {
                       fontSize: 12, fontWeight: 500,
                       color: active ? "#3A1335" : done ? "#3A1335" : "#7A7A8A",
                       display: "none",
-                    }}
-                      className="sm:inline"
-                    >{label}</span>
+                    }} className="sm:inline">{label}</span>
                   </div>
                   {i < STEPS.length - 1 && (
                     <div style={{
@@ -288,29 +542,36 @@ export default function CotizarPage() {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <Field label="Razón Social" />
+                <Field label="Razón Social"
+                  value={empresa.razonSocial} onChange={v => updE("razonSocial", v)} />
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <Field label="RIF" hint="Ej: J-12345678-9" />
-                  <Field label="N° de empleados" type="number" />
+                  <Field label="RIF" hint="Ej: J-12345678-9"
+                    value={empresa.rif} onChange={v => updE("rif", v)} />
+                  <Field label="N° de empleados" type="number"
+                    value={empresa.empleados} onChange={v => updE("empleados", v)} />
                 </div>
                 <Select
                   label="Sector industrial"
                   options={[
-                    { value: "manufactura",   label: "Manufactura"   },
-                    { value: "servicios",     label: "Servicios"     },
-                    { value: "comercio",      label: "Comercio"      },
-                    { value: "tecnologia",    label: "Tecnología"    },
-                    { value: "construccion",  label: "Construcción"  },
-                    { value: "salud",         label: "Salud"         },
-                    { value: "educacion",     label: "Educación"     },
-                    { value: "otro",          label: "Otro"          },
+                    { value: "manufactura",  label: "Manufactura"  },
+                    { value: "servicios",    label: "Servicios"    },
+                    { value: "comercio",     label: "Comercio"     },
+                    { value: "tecnologia",   label: "Tecnología"   },
+                    { value: "construccion", label: "Construcción" },
+                    { value: "salud",        label: "Salud"        },
+                    { value: "educacion",    label: "Educación"    },
+                    { value: "otro",         label: "Otro"         },
                   ]}
                   hint="Clasifica el giro principal de tu empresa"
+                  value={empresa.sector} onChange={v => updE("sector", v)}
                 />
-                <Field label="Facturación anual estimada" type="number" suffix="USD" />
+                <Field label="Facturación anual estimada" type="number" suffix="USD"
+                  value={empresa.facturacion} onChange={v => updE("facturacion", v)} />
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <Field label="Email de contacto" type="email" />
-                  <Field label="Teléfono" type="tel" hint="+58..." />
+                  <Field label="Email de contacto" type="email"
+                    value={empresa.email} onChange={v => updE("email", v)} />
+                  <Field label="Teléfono" type="tel" hint="+58…"
+                    value={empresa.telefono} onChange={v => updE("telefono", v)} />
                 </div>
               </div>
 
@@ -388,44 +649,149 @@ export default function CotizarPage() {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+
+                {/* ── Automóvil ── */}
                 {ramo === "automovil" && <>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                    <Field label="Marca" />
-                    <Field label="Modelo" />
+                    <Field label="Marca"  value={autoData.marca}  onChange={v => updA("marca", v)} />
+                    <Field label="Modelo" value={autoData.modelo} onChange={v => updA("modelo", v)} />
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                    <Field label="Año" type="number" />
-                    <Field label="Valor asegurado" type="number" suffix="USD" />
+                    <Field label="Año" type="number"
+                      value={autoData.anio} onChange={v => updA("anio", v)} />
+                    <Field label="Valor asegurado" type="number" suffix="USD"
+                      value={autoData.valor} onChange={v => updA("valor", v)} />
                   </div>
-                  <Select label="Uso del vehículo" options={[
-                    { value: "particular", label: "Particular" },
-                    { value: "comercial",  label: "Comercial"  },
-                    { value: "carga",      label: "Carga"      },
-                  ]} />
-                  <Field label="N° de vehículos (si es flota)" type="number" hint="Dejá en blanco si es un solo vehículo" />
+                  <Select label="Uso del vehículo"
+                    options={[
+                      { value: "particular", label: "Particular" },
+                      { value: "comercial",  label: "Comercial"  },
+                      { value: "carga",      label: "Carga"      },
+                    ]}
+                    value={autoData.uso} onChange={v => updA("uso", v)}
+                  />
+                  <Field label="N° de vehículos (si es flota)" type="number"
+                    hint="Dejá en blanco si es un solo vehículo"
+                    value={autoData.nVehiculos} onChange={v => updA("nVehiculos", v)} />
                 </>}
 
+                {/* ── Salud ── */}
                 {ramo === "salud" && <>
-                  <Field label="N° de asegurados" type="number" />
-                  <Field label="Edad promedio del grupo" type="number" suffix="años" />
-                  <Select label="Cobertura deseada" options={[
-                    { value: "basica",     label: "Básica"     },
-                    { value: "intermedia", label: "Intermedia" },
-                    { value: "premium",    label: "Premium"    },
-                  ]} />
+                  <Field label="N° de asegurados" type="number"
+                    value={saludData.nAsegurados} onChange={v => updS("nAsegurados", v)} />
+                  <Field label="Edad promedio del grupo" type="number" suffix="años"
+                    value={saludData.edadPromedio} onChange={v => updS("edadPromedio", v)} />
+                  <Select label="Cobertura deseada"
+                    options={[
+                      { value: "basica",     label: "Básica"     },
+                      { value: "intermedia", label: "Intermedia" },
+                      { value: "premium",    label: "Premium"    },
+                    ]}
+                    value={saludData.cobertura} onChange={v => updS("cobertura", v)}
+                  />
                 </>}
 
-                {(ramo === "hogar" || ramo === "patrimoniales") && <>
-                  <Field label="Tipo de riesgo" />
-                  <Field label="Valor de bienes" type="number" suffix="USD" />
-                  <Field label="Dirección del riesgo" />
-                  <Field label="Metros cuadrados" type="number" suffix="m²" />
+                {/* ── Hogar ── */}
+                {ramo === "hogar" && <>
+                  <SectionTitle>Datos del inmueble</SectionTitle>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <Select
+                      label="Estado"
+                      options={estadoOpts}
+                      hint={estadoOpts.length === 0 ? "Cargando desde Seguros Caracas…" : undefined}
+                      loading={estadoOpts.length === 0}
+                      value={hogarData.inmueble.cdEstado}
+                      onChange={handleEstadoChange}
+                    />
+                    <Select
+                      label="Ciudad"
+                      options={ciudades.map(c => ({ value: c.codigo, label: c.descripcion }))}
+                      hint="Depende del estado seleccionado"
+                      loading={loadingCiudades}
+                      value={hogarData.inmueble.cdCiudad}
+                      onChange={handleCiudadChange}
+                    />
+                  </div>
+
+                  <Select
+                    label="Sector / Urbanización"
+                    options={sectores.map(s => ({ value: s.codigo, label: s.descripcion }))}
+                    hint="Depende de la ciudad seleccionada"
+                    loading={loadingSectores}
+                    value={hogarData.inmueble.cdSector}
+                    onChange={handleSectorChange}
+                  />
+
+                  <Select
+                    label="Índole del inmueble"
+                    options={indoleOpts.length > 0 ? indoleOpts : [
+                      { value: "1", label: "Apartamento Residencial" },
+                      { value: "2", label: "Casa Residencial"        },
+                      { value: "3", label: "Local Comercial"         },
+                      { value: "4", label: "Oficina"                 },
+                    ]}
+                    value={hogarData.inmueble.cdIndole}
+                    onChange={v => {
+                      const opts = indoleOpts.length > 0 ? indoleOpts : [
+                        { value: "1", label: "Apartamento Residencial" },
+                        { value: "2", label: "Casa Residencial"        },
+                        { value: "3", label: "Local Comercial"         },
+                        { value: "4", label: "Oficina"                 },
+                      ];
+                      updHI("cdIndole", v);
+                      updHI("deInmueble", opts.find(o => o.value === v)?.label ?? "");
+                    }}
+                  />
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <Field label="Nombre del inmueble" placeholder="Ej: Torre B, Piso 4, Apto 4-C"
+                      value={hogarData.inmueble.deInmueble} onChange={v => updHI("deInmueble", v)} />
+                    <Field label="Calle / Avenida"
+                      value={hogarData.inmueble.deCalle} onChange={v => updHI("deCalle", v)} />
+                  </div>
+                  <Field label="Dirección (línea 1)" hint="Máximo 50 caracteres"
+                    value={hogarData.inmueble.deDireccion1} onChange={v => updHI("deDireccion1", v)} />
+                  <Field label="Dirección (línea 2)" hint="Opcional — máximo 50 caracteres"
+                    value={hogarData.inmueble.deDireccion2} onChange={v => updHI("deDireccion2", v)} />
+
+                  <SectionTitle>Datos del asegurado</SectionTitle>
+                  <PersonaFields data={hogarData.asegurado} onChange={updHA} />
+
+                  <SectionTitle>Datos del tomador</SectionTitle>
+                  <CheckToggle
+                    label="El tomador es el mismo que el asegurado"
+                    checked={hogarData.tomadorIgualAsegurado}
+                    onChange={v => setHogarData(p => ({ ...p, tomadorIgualAsegurado: v }))}
+                  />
+                  {!hogarData.tomadorIgualAsegurado && (
+                    <PersonaFields data={hogarData.tomador} onChange={updHT} />
+                  )}
+                </>}
+
+                {/* ── Patrimoniales ── */}
+                {ramo === "patrimoniales" && <>
+                  <Field label="Tipo de riesgo"
+                    value={patrimonialData.tipoRiesgo} onChange={v => updP("tipoRiesgo", v)} />
+                  <Field label="Valor de bienes" type="number" suffix="USD"
+                    value={patrimonialData.valorBienes} onChange={v => updP("valorBienes", v)} />
+                  <Field label="Dirección del riesgo"
+                    value={patrimonialData.direccion} onChange={v => updP("direccion", v)} />
+                  <Field label="Metros cuadrados" type="number" suffix="m²"
+                    value={patrimonialData.metros} onChange={v => updP("metros", v)} />
                 </>}
               </div>
 
-              <PrimaryBtn onClick={handleCalcular}>
-                ✦ Calcular cotizaciones
-              </PrimaryBtn>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <PrimaryBtn onClick={handleCalcular} disabled={!CREDENTIALS_READY}>
+                  {CREDENTIALS_READY ? "✦ Calcular cotizaciones" : "⏸ Pendiente de credenciales"}
+                </PrimaryBtn>
+                {!CREDENTIALS_READY && (
+                  <p style={{ textAlign: "center", fontSize: 11, color: "#7A7A8A", lineHeight: 1.5 }}>
+                    El botón se activará cuando se configuren las credenciales del productor.
+                  </p>
+                )}
+              </div>
             </motion.div>
           )}
 
@@ -433,9 +799,7 @@ export default function CotizarPage() {
           {loading && (
             <motion.div
               key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               style={{ display: "flex", flexDirection: "column", gap: 20 }}
             >
@@ -450,26 +814,23 @@ export default function CotizarPage() {
                 display: "flex", flexDirection: "column", gap: 14,
               }}>
                 {[
-                  { label: "Conectando con aseguradoras", delay: "0ms"   },
-                  { label: "Calculando primas",           delay: "600ms" },
+                  { label: "Conectando con aseguradoras", delay: "0ms"    },
+                  { label: "Calculando primas",           delay: "600ms"  },
                   { label: "Comparando coberturas",       delay: "1200ms" },
                 ].map(s => (
                   <div key={s.label} style={{
                     display: "flex", alignItems: "center", gap: 10,
-                    animation: `fadeInLeft 0.3s ease both`,
-                    animationDelay: s.delay,
+                    animation: `fadeInLeft 0.3s ease both`, animationDelay: s.delay,
                   }}>
                     <div style={{
                       width: 7, height: 7, borderRadius: "50%", flexShrink: 0,
-                      backgroundColor: "#5A1D4F",
-                      animation: "pulse 1.5s ease-in-out infinite",
+                      backgroundColor: "#5A1D4F", animation: "pulse 1.5s ease-in-out infinite",
                     }} />
                     <span style={{ fontSize: 13, color: "#4A464A" }}>{s.label}</span>
                   </div>
                 ))}
               </div>
 
-              {/* Skeleton cards */}
               {[0, 1, 2].map(i => (
                 <div key={i} style={{
                   borderRadius: 14, border: "1.5px solid rgba(58,19,53,0.09)",
@@ -481,7 +842,7 @@ export default function CotizarPage() {
                       <div style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: "rgba(58,19,53,0.07)" }} />
                       <div>
                         <div style={{ width: 130, height: 13, borderRadius: 4, backgroundColor: "rgba(58,19,53,0.07)", marginBottom: 6 }} />
-                        <div style={{ width: 90, height: 10, borderRadius: 4, backgroundColor: "rgba(58,19,53,0.04)" }} />
+                        <div style={{ width: 90,  height: 10, borderRadius: 4, backgroundColor: "rgba(58,19,53,0.04)" }} />
                       </div>
                     </div>
                     <div style={{ textAlign: "right" }}>
@@ -493,7 +854,7 @@ export default function CotizarPage() {
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                     {[0, 1, 2, 3].map(j => (
                       <div key={j}>
-                        <div style={{ width: "60%", height: 9, borderRadius: 3, backgroundColor: "rgba(58,19,53,0.04)", marginBottom: 4 }} />
+                        <div style={{ width: "60%", height: 9,  borderRadius: 3, backgroundColor: "rgba(58,19,53,0.04)", marginBottom: 4 }} />
                         <div style={{ width: "80%", height: 11, borderRadius: 3, backgroundColor: "rgba(58,19,53,0.07)" }} />
                       </div>
                     ))}
@@ -507,24 +868,25 @@ export default function CotizarPage() {
           {step === "results" && !loading && (
             <motion.div key="results" {...fadeUp} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-              {/* Header */}
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
                 <div>
                   <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.4px", color: "#3A1335", marginBottom: 4 }}>
                     Comparativa de cotizaciones
                   </h2>
                   <p style={{ fontSize: 12.5, color: "#4A464A" }}>
-                    1 aseguradora · válida 48 h
+                    {displayCards.length} aseguradora{displayCards.length !== 1 ? "s" : ""} · válida 48 h
                   </p>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{
-                    fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 99,
-                    backgroundColor: "rgba(217,119,6,0.10)", color: "#B45309",
-                    border: "1px solid rgba(217,119,6,0.22)",
-                  }}>
-                    ⚠ Datos de simulación
-                  </span>
+                  {!CREDENTIALS_READY && (
+                    <span style={{
+                      fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 99,
+                      backgroundColor: "rgba(217,119,6,0.10)", color: "#B45309",
+                      border: "1px solid rgba(217,119,6,0.22)",
+                    }}>
+                      ⚠ Datos de simulación
+                    </span>
+                  )}
                   <button
                     onClick={resetForm}
                     style={{
@@ -538,10 +900,9 @@ export default function CotizarPage() {
                 </div>
               </div>
 
-              {/* Tarjetas */}
-              {OFERTAS.map((oferta, i) => (
+              {displayCards.map((oferta, i) => (
                 <motion.div
-                  key={oferta.nombre}
+                  key={oferta.nombre + i}
                   initial={{ opacity: 0, y: 18 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.10, duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
@@ -555,11 +916,9 @@ export default function CotizarPage() {
                       : "0 2px 8px rgba(58,19,53,0.04)",
                   }}
                 >
-                  {/* Barra de color */}
                   <div style={{ height: 3, backgroundColor: oferta.color }} />
 
                   <div style={{ padding: "20px 20px 18px" }}>
-                    {/* Cabecera */}
                     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                         <div style={{
@@ -578,27 +937,31 @@ export default function CotizarPage() {
                               fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99,
                               backgroundColor: oferta.color + "12", color: oferta.color,
                               border: `1px solid ${oferta.color}20`,
-                            }}>
-                              {oferta.tag}
-                            </span>
+                            }}>{oferta.tag}</span>
                           </div>
                           <p style={{ fontSize: 12, color: "#4A464A", marginTop: 2 }}>Póliza anual · 1 año vigencia</p>
                         </div>
                       </div>
 
-                      {/* Precio */}
                       <div style={{ textAlign: "right", flexShrink: 0 }}>
-                        <p style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-1px", color: "#3A1335", lineHeight: 1 }}>
-                          ${oferta.prima_anual.toLocaleString()}
-                        </p>
-                        <p style={{ fontSize: 11, color: "#7A7A8A", marginTop: 1 }}>USD / año</p>
-                        <p style={{ fontSize: 12, color: oferta.color, fontWeight: 700, marginTop: 2 }}>
-                          ~${oferta.prima_mensual} / mes
-                        </p>
+                        {oferta.prima_anual > 0 ? (
+                          <>
+                            <p style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-1px", color: "#3A1335", lineHeight: 1 }}>
+                              ${oferta.prima_anual.toLocaleString()}
+                            </p>
+                            <p style={{ fontSize: 11, color: "#7A7A8A", marginTop: 1 }}>USD / año</p>
+                            <p style={{ fontSize: 12, color: oferta.color, fontWeight: 700, marginTop: 2 }}>
+                              ~${oferta.prima_mensual} / mes
+                            </p>
+                          </>
+                        ) : (
+                          <p style={{ fontSize: 13, color: "#7A7A8A", fontStyle: "italic" }}>
+                            —
+                          </p>
+                        )}
                       </div>
                     </div>
 
-                    {/* Score bar */}
                     <div style={{ marginBottom: 14 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                         <span style={{ fontSize: 10, fontWeight: 600, color: "#7A7A8A", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>
@@ -616,55 +979,61 @@ export default function CotizarPage() {
                       </div>
                     </div>
 
-                    {/* Separador */}
                     <div style={{ height: 1, backgroundColor: "rgba(58,19,53,0.08)", marginBottom: 14 }} />
 
-                    {/* Coberturas */}
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px", marginBottom: 16 }}>
                       {oferta.coberturas.map(c => (
                         <div key={c.label}>
                           <p style={{ fontSize: 10, fontWeight: 600, color: "#7A7A8A", textTransform: "uppercase" as const, letterSpacing: "0.05em" }}>
                             {c.label}
                           </p>
-                          <p style={{ fontSize: 12.5, color: "#4A4560", marginTop: 2, fontWeight: c.valor.startsWith("[") ? 400 : 500 }}>
+                          <p style={{ fontSize: 12.5, color: "#4A4560", marginTop: 2, fontWeight: c.valor.startsWith("—") ? 400 : 500 }}>
                             {c.valor}
                           </p>
                         </div>
                       ))}
                     </div>
 
-                    {/* CTA */}
                     <button
+                      disabled={!CREDENTIALS_READY}
                       style={{
-                        width: "100%", padding: "11px 16px",
-                        borderRadius: 4,
-                        backgroundColor: oferta.destacado ? "#C2A378" : "transparent",
-                        color: oferta.destacado ? "#fff" : "#3A1335",
-                        border: oferta.destacado ? "none" : "1.5px solid #d2c2cb",
-                        fontSize: 13.5, fontWeight: 600, cursor: "pointer",
+                        width: "100%", padding: "11px 16px", borderRadius: 4,
+                        backgroundColor: CREDENTIALS_READY
+                          ? (oferta.destacado ? "#C2A378" : "transparent")
+                          : "rgba(58,19,53,0.06)",
+                        color: CREDENTIALS_READY
+                          ? (oferta.destacado ? "#fff" : "#3A1335")
+                          : "#7A7A8A",
+                        border: oferta.destacado && CREDENTIALS_READY ? "none" : "1.5px solid #d2c2cb",
+                        fontSize: 13.5, fontWeight: 600,
+                        cursor: CREDENTIALS_READY ? "pointer" : "not-allowed",
                         transition: "background-color 140ms ease, border-color 140ms ease, transform 140ms ease",
                       }}
                       onMouseEnter={e => {
-                        if (oferta.destacado) { e.currentTarget.style.backgroundColor = "#B8956A"; }
-                        else { e.currentTarget.style.borderColor = "#3A1335"; }
+                        if (!CREDENTIALS_READY) return;
+                        if (oferta.destacado) e.currentTarget.style.backgroundColor = "#B8956A";
+                        else e.currentTarget.style.borderColor = "#3A1335";
                         e.currentTarget.style.transform = "translateY(-1px)";
                       }}
                       onMouseLeave={e => {
-                        if (oferta.destacado) { e.currentTarget.style.backgroundColor = "#C2A378"; }
-                        else { e.currentTarget.style.borderColor = "#d2c2cb"; }
+                        if (!CREDENTIALS_READY) return;
+                        if (oferta.destacado) e.currentTarget.style.backgroundColor = "#C2A378";
+                        else e.currentTarget.style.borderColor = "#d2c2cb";
                         e.currentTarget.style.transform = "translateY(0)";
                       }}
                     >
-                      Solicitar esta póliza →
+                      {CREDENTIALS_READY ? "Solicitar esta póliza →" : "Disponible al activar credenciales"}
                     </button>
                   </div>
                 </motion.div>
               ))}
 
-              <p style={{ textAlign: "center", fontSize: 11.5, color: "#7A7A8A", paddingTop: 4, lineHeight: 1.6 }}>
-                Los precios y coberturas son simulaciones de referencia.
-                Los valores reales serán provistos por las aseguradoras al integrar las APIs.
-              </p>
+              {!CREDENTIALS_READY && (
+                <p style={{ textAlign: "center", fontSize: 11.5, color: "#7A7A8A", paddingTop: 4, lineHeight: 1.6 }}>
+                  Los precios y coberturas son simulaciones de referencia.
+                  Los valores reales serán provistos por Seguros Caracas al activar las credenciales.
+                </p>
+              )}
             </motion.div>
           )}
 
