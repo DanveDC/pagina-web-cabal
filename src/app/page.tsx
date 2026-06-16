@@ -345,21 +345,21 @@ export default function LandingPage() {
       titulo: "Seguros de Salud",
       desc: "Cobertura nacional e internacional (HCM) con acceso a las redes clínicas más prestigiosas del país.",
       badge: "Persona",
-      img: "https://lh3.googleusercontent.com/aida/AP1WRLu6af-yyh5qfO1FJTo0-yy50AwZZ5oZWaVwTxgA2DV7Btt0uGu1nHTHwJ81PooFbIiWkEb1mp3KNwIH1P6LL2RkAJE2ng4Om-c9VfsvrPFjxvfg9-DgE0t_rTdx_-OCV8x7k-2PICTcV8BYcFWvnhJEIVfjSCHvFR6o4saJUtOfIVaInD4vybVyjdwcL26wOnZwDuQdqDkGzl51lugQIp5Y7UMcc-btndwV_gEJrDUugYRt1pnsEB5ICkA",
+      img: "/images/salud.jpg",
       icon: "salud",
     },
     {
       titulo: "Automóvil",
       desc: "Protección total contra daños propios, robo y RCV, con asistencia vial las 24 horas del día.",
       badge: "Auto",
-      img: "https://lh3.googleusercontent.com/aida/AP1WRLv1l-blsXcSeeC7q8YIqBzIrOws74L-FNST4T56CFOxDcV3IAy4_T_pieub3DfeSYxhtQOYZAoiFBrnkppjmbwGVj6MNxTOC0iKPN9PFKHOWEPexCuN9K-M0dP-4W-QsKbgzU139kXiVtJGxzKpVoVfiVD3lmORn25eYiDXOXoCamxiIQlk6Rd8__VhOznNcNS7ZVLJ02tfv56gdNgeYolPb8c4I2CkkH29O4W6loru0zivCTECJD2E0h0Y",
+      img: "/images/auto.jpg",
       icon: "auto",
     },
     {
       titulo: "Patrimonios",
       desc: "Cobertura para bienes inmuebles: casas, apartamentos y activos de bienes raíces. Protección contra incendio, robo y responsabilidad civil.",
       badge: "Patrimonios",
-      img: "https://lh3.googleusercontent.com/aida/AP1WRLvHvtMFA2kJf7iLEDrCxC-fS34d6xLT7Y3oiXDrgajaHESC5KJNCnfdAF80AgFapp2u8Rn7lUrdEcxM01SnVJxP4MDq5Jjar_6vdkRafBTOBOmR3ESYdxo2S0IiGb58lpOh14T8ll0gxDUSTCbwhVljgpLASF_2-CatdGy1BrGne6V0W3_WPYuWnr5WUDa955HzD9nlEPxe4BGjO9dBeGpkyzcIM9otejzDSKY6-NVNya0eM7kcNxH7oPIs",
+      img: "/images/corporativo.jpg",
       icon: "patrimonio",
     },
   ];
@@ -382,7 +382,7 @@ export default function LandingPage() {
         {/* Logo */}
         <a href="#inicio" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
           <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuARBmzp3-PUBOeHGYMmxYrkBXeST6FQRt-mgMwaJYuO_gMz_F3ULGK7HZS1PewGz3lVWgxx5Klb0jmuIU4Keo1wuZVp0ZTXTiGguBXCaADZGB9ZXStaYmC4felus7ThwMXVptWn5g0IqNufcmoSqsMapgfrpZ_CQz8Z_fhaULlbX4F39E-_uFv2VkYX_2ty85hQSJ7AnAETr-askKhpebrbkisPlhgxWGTxZskmlmUy_19CDKQrq0GF5chys1T3opGV7DfstmU1Bdc1"
+            src="/images/logo.png"
             alt="Cabal Logo"
             style={{ filter: "brightness(0) invert(1)", height: "48px", width: "auto" }}
           />
@@ -474,7 +474,7 @@ export default function LandingPage() {
       }}>
         {/* Background image */}
         <img
-          src="https://lh3.googleusercontent.com/aida/AP1WRLtN42ferh275Njo-WCyYJY_AtUsvRusTFX9wcd9EwKa27bjqXQP7ara9FDXi99JDRUDL1CkBMYs3GjhYdJvoIlf6swtpjm24dn5WVZ4EiiE-c2hnxseJbsEufU5RkSczSnojr8KapIxU2ZrDOlKeUBmnIq328Z7pdSYSTMv-ueLAs9inf5l2Wc1TW878v0AVPNKuF4X8IkMd8TjaZvU8RdUT3kp1zTlaDt9xIqeIHq_aH-VEatQpCTSA00"
+          src="/images/hero-bg.jpg"
           alt=""
           aria-hidden
           style={{
@@ -750,7 +750,7 @@ export default function LandingPage() {
             {/* Right — image + floating card */}
             <div style={{ position: "relative" }}>
               <img
-                src="https://lh3.googleusercontent.com/aida/AP1WRLv2qBeOucBNaCeNFzXwFcVUp6iIidCi8Xbn1XgweO9lr5n5lU_dkB2OXrtnIpdGinWpGq-qiT8q0xqHmu-4znZDMnAnHzPLpEo7POlCGp1-atGS7a2BkLEohS3EFiWNmBvg0T3xpTZjbvBZwUZrSPIlc2x9XSDmvIBPYoJBfAfnjclvcV5PJJODlCN27eEcHzFX2vgX2SgbqI_b0Y0YrOSUD09AKhgeY7ot7Mb7x2IrjGcJaBa9c8yosiid"
+                src="/images/hero-bg.jpg"
                 alt="Equipo Cabal"
                 style={{
                   borderRadius: "16px", width: "100%",
@@ -898,7 +898,7 @@ export default function LandingPage() {
         textAlign: "center",
       }}>
         <img
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8r3kko52aPQ01e5x8xSZl7uEtHuK2GS02PMmdC5-3AgzRiQk3Ss_82eZEEw4-ykw13t06fJy51hcVaUYgAFzQhIsIZbWmuP3KdOY8zq3fCwXOmP_BatIBZ6S37UzhXL4gNO7dGtacciuaTRd3ziBa1JrB-p4PrSbHtLU_wiSoBQUV0-xMezbom36ACQC3aWdK77OjJYoozuzEYdRZASQ84eMSL2eY1Kr0zshttsAS6FsIRHhNGIeYr5yhZuZ1QVDUYNDaCOUlyae-cOI"
+          src="/images/logo2.png"
           alt="#SiemprePresente"
           style={{ height: "128px", width: "auto" }}
         />
@@ -1126,7 +1126,7 @@ export default function LandingPage() {
             {/* Col 1 — Brand */}
             <div>
               <img
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuARBmzp3-PUBOeHGYMmxYrkBXeST6FQRt-mgMwaJYuO_gMz_F3ULGK7HZS1PewGz3lVWgxx5Klb0jmuIU4Keo1wuZVp0ZTXTiGguBXCaADZGB9ZXStaYmC4felus7ThwMXVptWn5g0IqNufcmoSqsMapgfrpZ_CQz8Z_fhaULlbX4F39E-_uFv2VkYX_2ty85hQSJ7AnAETr-askKhpebrbkisPlhgxWGTxZskmlmUy_19CDKQrq0GF5chys1T3opGV7DfstmU1Bdc1"
+                src="/images/logo.png"
                 alt="Cabal Logo"
                 style={{ filter: "brightness(0) invert(1)", height: "64px", width: "auto", marginBottom: "32px", display: "block" }}
               />
