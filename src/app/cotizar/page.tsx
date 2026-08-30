@@ -2,16 +2,17 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { segurosCaracasClient } from "@/lib/api/seguros-caracas";
 import { PERSONA_EMPTY } from "@/types/seguros-caracas";
-import type { HogarFormState, SuscribirPersona, Propuesta, Ciudad, Sector } from "@/types/seguros-caracas";
+import type { HogarFormState, PersonaFormState, Propuesta, Ciudad, Sector } from "@/types/seguros-caracas";
 
 // ─── CREDENTIALS ─────────────────────────────────────────────────────────────
-// Fill these in when Seguros Caracas provides the broker credentials.
-const SC_PRODUCTOR = "";
-const SC_CONVENIO  = "";
-const CREDENTIALS_READY = Boolean(SC_PRODUCTOR && SC_CONVENIO);
+// Broker credentials live ONLY on the server (SC_PRODUCTOR / SC_CONVENIO env
+// vars, injected by the /api/seguros-caracas proxy). The browser only learns
+// whether the integration is live via this public, non-secret flag.
+const CREDENTIALS_READY = process.env.NEXT_PUBLIC_SC_ENABLED === "true";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 type Ramo = "automovil" | "salud" | "hogar" | "patrimoniales";
@@ -252,8 +253,8 @@ function CheckToggle({ label, checked, onChange }: {
 function PersonaFields({
   data, onChange,
 }: {
-  data: SuscribirPersona;
-  onChange: (k: keyof SuscribirPersona, v: string) => void;
+  data: PersonaFormState;
+  onChange: (k: keyof PersonaFormState, v: string) => void;
 }) {
   const NAC_OPTS = [
     { value: "V", label: "V — Venezolano/a" },
@@ -279,7 +280,7 @@ function PersonaFields({
         <Select label="Nacionalidad" options={NAC_OPTS}
           value={data.nacionalidad} onChange={v => onChange("nacionalidad", v)} />
         <Field label="Cédula / RIF" type="number"
-          value={data.cedulaRif ? String(data.cedulaRif) : ""}
+          value={data.cedulaRif}
           onChange={v => onChange("cedulaRif", v)} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -330,47 +331,79 @@ export default function CotizarPage() {
   const [indoleOpts,      setIndoleOpts]      = useState<{ value: string; label: string }[]>([]);
   const [ciudades,        setCiudades]        = useState<Ciudad[]>([]);
   const [sectores,        setSectores]        = useState<Sector[]>([]);
+  const [loadingListas,   setLoadingListas]   = useState(false);
   const [loadingCiudades, setLoadingCiudades] = useState(false);
   const [loadingSectores, setLoadingSectores] = useState(false);
+  const [apiError,        setApiError]        = useState<string | null>(null);
 
   // ── Results ──────────────────────────────────────────────────────────────────
   const [propuestasApi, setPropuestasApi] = useState<Propuesta[] | null>(null);
 
   // ── Effects — hogar API calls ─────────────────────────────────────────────
+  // Each effect owns an AbortController so a stale in-flight response can never
+  // clobber a newer selection. All state writes happen inside the async flow.
+  // Parent-select changes clear dependent fields in the change handlers
+  // (event-driven); stale option arrays are masked at render time.
+  const cdEstado = hogarData.inmueble.cdEstado;
+  const cdCiudad = hogarData.inmueble.cdCiudad;
+  const [listasRetry, setListasRetry] = useState(0);
+  const needsListas = ramo === "hogar" && estadoOpts.length === 0;
+
   useEffect(() => {
-    if (ramo !== "hogar") return;
-    segurosCaracasClient.getListasIniciales().then(res => {
-      if ("estados" in res) {
-        setEstadoOpts(res.estados.map(e => ({ value: e.codigo, label: e.descripcion })));
-        setIndoleOpts(res.indoles.map(i => ({ value: i.codigo, label: i.descripcion })));
+    if (!needsListas) return;
+    const ctrl = new AbortController();
+    void (async () => {
+      setLoadingListas(true);
+      setApiError(null);
+      try {
+        const res = await segurosCaracasClient.getListasIniciales(ctrl.signal);
+        if (ctrl.signal.aborted) return;
+        if (res.ok && "estados" in res.data) {
+          setEstadoOpts(res.data.estados.map(e => ({ value: e.codigo, label: e.descripcion })));
+          setIndoleOpts(res.data.indoles.map(i => ({ value: i.codigo, label: i.descripcion })));
+        } else if (!res.ok && res.error !== "aborted") {
+          setApiError("No se pudieron cargar los listados de Seguros Caracas.");
+        }
+      } finally {
+        if (!ctrl.signal.aborted) setLoadingListas(false);
       }
-    });
-  }, [ramo]);
+    })().catch(() => {});
+    return () => ctrl.abort();
+  }, [needsListas, listasRetry]);
 
   useEffect(() => {
-    const cdEstado = hogarData.inmueble.cdEstado;
-    if (!cdEstado) { setCiudades([]); setSectores([]); return; }
-    setLoadingCiudades(true);
-    setCiudades([]);
-    setSectores([]);
-    setHogarData(p => ({ ...p, inmueble: { ...p.inmueble, cdCiudad: "", deCiudad: "", cdSector: "", deSector: "" } }));
-    segurosCaracasClient.getCiudades(cdEstado).then(res => {
-      if ("ciudades" in res) setCiudades(res.ciudades);
-    }).finally(() => setLoadingCiudades(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hogarData.inmueble.cdEstado]);
+    if (!cdEstado) return;
+    const ctrl = new AbortController();
+    void (async () => {
+      setLoadingCiudades(true);
+      setCiudades([]);
+      try {
+        const res = await segurosCaracasClient.getCiudades(cdEstado, ctrl.signal);
+        if (ctrl.signal.aborted) return;
+        if (res.ok && "ciudades" in res.data) setCiudades(res.data.ciudades);
+      } finally {
+        if (!ctrl.signal.aborted) setLoadingCiudades(false);
+      }
+    })().catch(() => {});
+    return () => ctrl.abort();
+  }, [cdEstado]);
 
   useEffect(() => {
-    const { cdEstado, cdCiudad } = hogarData.inmueble;
-    if (!cdEstado || !cdCiudad) { setSectores([]); return; }
-    setLoadingSectores(true);
-    setSectores([]);
-    setHogarData(p => ({ ...p, inmueble: { ...p.inmueble, cdSector: "", deSector: "" } }));
-    segurosCaracasClient.getSectores(cdEstado, cdCiudad).then(res => {
-      if ("sectores" in res) setSectores(res.sectores);
-    }).finally(() => setLoadingSectores(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hogarData.inmueble.cdCiudad]);
+    if (!cdEstado || !cdCiudad) return;
+    const ctrl = new AbortController();
+    void (async () => {
+      setLoadingSectores(true);
+      setSectores([]);
+      try {
+        const res = await segurosCaracasClient.getSectores(cdEstado, cdCiudad, ctrl.signal);
+        if (ctrl.signal.aborted) return;
+        if (res.ok && "sectores" in res.data) setSectores(res.data.sectores);
+      } finally {
+        if (!ctrl.signal.aborted) setLoadingSectores(false);
+      }
+    })().catch(() => {});
+    return () => ctrl.abort();
+  }, [cdEstado, cdCiudad]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
   const updE = (k: keyof EmpresaForm,     v: string) => setEmpresa(p        => ({ ...p, [k]: v }));
@@ -381,41 +414,62 @@ export default function CotizarPage() {
   const updHI = (k: keyof HogarFormState["inmueble"], v: string) =>
     setHogarData(p => ({ ...p, inmueble: { ...p.inmueble, [k]: v } }));
 
-  const updHA = (k: keyof SuscribirPersona, v: string) =>
+  const updHA = (k: keyof PersonaFormState, v: string) =>
     setHogarData(p => ({ ...p, asegurado: { ...p.asegurado, [k]: v } }));
 
-  const updHT = (k: keyof SuscribirPersona, v: string) =>
+  const updHT = (k: keyof PersonaFormState, v: string) =>
     setHogarData(p => ({ ...p, tomador: { ...p.tomador, [k]: v } }));
 
-  const handleEstadoChange = (cdEstado: string) => {
-    const deEstado = estadoOpts.find(o => o.value === cdEstado)?.label ?? "";
-    updHI("cdEstado", cdEstado);
-    updHI("deEstado", deEstado);
+  const handleEstadoChange = (nextEstado: string) => {
+    const deEstado = estadoOpts.find(o => o.value === nextEstado)?.label ?? "";
+    // Reset every dependent field so no stale city/sector survives the change.
+    setHogarData(p => ({
+      ...p,
+      inmueble: {
+        ...p.inmueble,
+        cdEstado: nextEstado, deEstado,
+        cdCiudad: "", deCiudad: "", cdPostal: "", x: "", y: "",
+        cdSector: "", deSector: "",
+      },
+    }));
+    setSectores([]);
   };
 
-  const handleCiudadChange = (cdCiudad: string) => {
-    const ciudad = ciudades.find(c => c.codigo === cdCiudad);
-    updHI("cdCiudad", cdCiudad);
-    updHI("deCiudad", ciudad?.descripcion ?? "");
-    updHI("cdPostal", ciudad?.cdPostal ?? "");
-    updHI("x", ciudad?.x ?? "");
-    updHI("y", ciudad?.y ?? "");
+  const handleCiudadChange = (nextCiudad: string) => {
+    const ciudad = ciudades.find(c => c.codigo === nextCiudad);
+    setHogarData(p => ({
+      ...p,
+      inmueble: {
+        ...p.inmueble,
+        cdCiudad: nextCiudad,
+        deCiudad: ciudad?.descripcion ?? "",
+        cdPostal: ciudad?.cdPostal ?? "",
+        x: ciudad?.x ?? "",
+        y: ciudad?.y ?? "",
+        cdSector: "", deSector: "",
+      },
+    }));
   };
 
   const handleSectorChange = (cdSector: string) => {
     const sector = sectores.find(s => s.codigo === cdSector);
-    updHI("cdSector", cdSector);
-    updHI("deSector", sector?.descripcion ?? "");
+    setHogarData(p => ({
+      ...p,
+      inmueble: { ...p.inmueble, cdSector, deSector: sector?.descripcion ?? "" },
+    }));
   };
 
   const handleCalcular = async () => {
     if (!CREDENTIALS_READY) return;
     setLoading(true);
+    setApiError(null);
     try {
-      const res = await segurosCaracasClient.getPropuestas(SC_PRODUCTOR, SC_CONVENIO);
-      if ("propuestas" in res) setPropuestasApi(res.propuestas);
-    } catch {
-      // Fall through — show placeholder on API error
+      const res = await segurosCaracasClient.getPropuestas();
+      if (res.ok && "propuestas" in res.data) {
+        setPropuestasApi(res.data.propuestas);
+      } else {
+        setApiError("No se pudieron obtener las cotizaciones en este momento.");
+      }
     } finally {
       setLoading(false);
       setStep("results");
@@ -430,6 +484,7 @@ export default function CotizarPage() {
     setHogarData(HOGAR_INIT);
     setPatrimonialData({ tipoRiesgo: "", valorBienes: "", direccion: "", metros: "" });
     setPropuestasApi(null);
+    setApiError(null);
     setCiudades([]); setSectores([]);
   };
 
@@ -467,7 +522,7 @@ export default function CotizarPage() {
         borderBottom: "1px solid rgba(58,19,53,0.09)",
         backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
       }}>
-        <a href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+        <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
           <div style={{
             backgroundColor: "white", borderRadius: 7, padding: "4px 9px",
             overflow: "hidden", flexShrink: 0,
@@ -480,7 +535,7 @@ export default function CotizarPage() {
               style={{ objectFit: "contain", display: "block" }}
             />
           </div>
-        </a>
+        </Link>
 
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
           <div style={{
@@ -695,18 +750,42 @@ export default function CotizarPage() {
                 {ramo === "hogar" && <>
                   <SectionTitle>Datos del inmueble</SectionTitle>
 
+                  {apiError && (
+                    <div style={{
+                      fontSize: 12, color: "#B45309", backgroundColor: "rgba(217,119,6,0.08)",
+                      border: "1px solid rgba(217,119,6,0.22)", borderRadius: 8,
+                      padding: "8px 12px", lineHeight: 1.5,
+                      display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+                    }}>
+                      <span>{apiError}</span>
+                      {!loadingListas && (
+                        <button
+                          type="button"
+                          onClick={() => { setEstadoOpts([]); setListasRetry(n => n + 1); }}
+                          style={{
+                            flexShrink: 0, fontSize: 11, fontWeight: 700, color: "#B45309",
+                            background: "transparent", border: "1px solid rgba(217,119,6,0.4)",
+                            borderRadius: 6, padding: "3px 10px", cursor: "pointer",
+                          }}
+                        >
+                          Reintentar
+                        </button>
+                      )}
+                    </div>
+                  )}
+
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                     <Select
                       label="Estado"
                       options={estadoOpts}
-                      hint={estadoOpts.length === 0 ? "Cargando desde Seguros Caracas…" : undefined}
-                      loading={estadoOpts.length === 0}
+                      hint={loadingListas ? "Cargando desde Seguros Caracas…" : undefined}
+                      loading={loadingListas}
                       value={hogarData.inmueble.cdEstado}
                       onChange={handleEstadoChange}
                     />
                     <Select
                       label="Ciudad"
-                      options={ciudades.map(c => ({ value: c.codigo, label: c.descripcion }))}
+                      options={(cdEstado ? ciudades : []).map(c => ({ value: c.codigo, label: c.descripcion }))}
                       hint="Depende del estado seleccionado"
                       loading={loadingCiudades}
                       value={hogarData.inmueble.cdCiudad}
@@ -716,7 +795,7 @@ export default function CotizarPage() {
 
                   <Select
                     label="Sector / Urbanización"
-                    options={sectores.map(s => ({ value: s.codigo, label: s.descripcion }))}
+                    options={(cdCiudad ? sectores : []).map(s => ({ value: s.codigo, label: s.descripcion }))}
                     hint="Depende de la ciudad seleccionada"
                     loading={loadingSectores}
                     value={hogarData.inmueble.cdSector}
