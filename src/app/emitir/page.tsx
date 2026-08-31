@@ -21,6 +21,7 @@ import type {
   CiudadesOk,
   SectoresOk,
   PropuestasOk,
+  ClienteOk,
   Propuesta,
   FrecuenciaPago,
   CatalogItem,
@@ -201,9 +202,9 @@ function StepPlan({
   const [selected, setSelected] = useState<{ plan: Propuesta; freq: FrecuenciaPago } | null>(null);
 
   useEffect(() => {
-    segurosCaracasClient.getPropuestas("", "")
+    segurosCaracasClient.getPropuestas()
       .then((r) => {
-        if ("cdError" in r && r.cdError === 0) setPropuestas((r as PropuestasOk).propuestas);
+        if (r.ok && "propuestas" in r.data) setPropuestas((r.data as PropuestasOk).propuestas);
         else setError("No se pudieron cargar los planes. Verifique la conexión con Seguros Caracas.");
       })
       .catch(() => setError("Error al conectar con Seguros Caracas."))
@@ -321,7 +322,7 @@ function StepInmueble({
 
   useEffect(() => {
     segurosCaracasClient.getListasIniciales().then((r) => {
-      if ("cdError" in r && r.cdError === 0) setListas(r as ListasInicialesOk);
+      if (r.ok && "estados" in r.data) setListas(r.data as ListasInicialesOk);
     });
   }, []);
 
@@ -332,7 +333,7 @@ function StepInmueble({
     if (!cdEstado) return;
     setLoadingCiudades(true);
     const r = await segurosCaracasClient.getCiudades(cdEstado);
-    if ("cdError" in r && r.cdError === 0) setCiudades((r as CiudadesOk).ciudades);
+    if (r.ok && "ciudades" in r.data) setCiudades((r.data as CiudadesOk).ciudades);
     setLoadingCiudades(false);
   }, [listas]);
 
@@ -343,7 +344,7 @@ function StepInmueble({
     if (!cdCiudad || !form.cdEstado) return;
     setLoadingSectores(true);
     const r = await segurosCaracasClient.getSectores(form.cdEstado, cdCiudad);
-    if ("cdError" in r && r.cdError === 0) setSectores((r as SectoresOk).sectores);
+    if (r.ok && "sectores" in r.data) setSectores((r.data as SectoresOk).sectores);
     setLoadingSectores(false);
   }, [ciudades, form.cdEstado]);
 
@@ -447,9 +448,9 @@ function PersonaForm({
     if (!check.ok) { setLookupError(check.reason); return; }
     setLookingUp(true);
     try {
-      const r = await segurosCaracasClient.getCliente("", data.nacionalidad, data.cedulaRif);
-      if ("cdError" in r && r.cdError === 0 && "cliente" in r) {
-        const c = r.cliente;
+      const r = await segurosCaracasClient.getCliente(data.nacionalidad, data.cedulaRif);
+      if (r.ok && "cliente" in r.data) {
+        const c = (r.data as ClienteOk).cliente;
         onChange("nombres", c.nombres);
         onChange("apellidosRazonSocial", c.apellidosRazonSocial);
         onChange("feNacimiento", c.feNacimiento);
