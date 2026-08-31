@@ -7,6 +7,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { segurosCaracasClient } from "@/lib/api/seguros-caracas";
 import { PERSONA_EMPTY } from "@/types/seguros-caracas";
 import type { HogarFormState, PersonaFormState, Propuesta, Ciudad, Sector } from "@/types/seguros-caracas";
+import {
+  sanitizePersonaField, sanitizeInmuebleField,
+  validatePersona, validateInmueble, hasErrors,
+  type FieldErrors,
+} from "@/lib/validation/seguros-caracas";
 
 // ─── CREDENTIALS ─────────────────────────────────────────────────────────────
 // Broker credentials live ONLY on the server (SC_PRODUCTOR / SC_CONVENIO env
@@ -100,12 +105,17 @@ function StepDot({ n, active, done }: { n: number; active: boolean; done: boolea
   );
 }
 
+const ERR_COLOR = "#B91C1C";
+
 function Field({
   label, type = "text", placeholder = "", hint = "", suffix = "", value = "", onChange,
+  error = "", inputMode, maxLength,
 }: {
   label: string; type?: string; placeholder?: string; hint?: string;
   suffix?: string; value?: string; onChange?: (v: string) => void;
+  error?: string; inputMode?: "text" | "numeric" | "email" | "tel"; maxLength?: number;
 }) {
+  const base = error ? ERR_COLOR : "#d2c2cb";
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <label style={{
@@ -115,18 +125,21 @@ function Field({
       <div style={{ position: "relative" }}>
         <input
           type={type}
+          inputMode={inputMode}
+          maxLength={maxLength}
           placeholder={placeholder || label}
           value={value}
           onChange={e => onChange?.(e.target.value)}
+          aria-invalid={error ? true : undefined}
           style={{
             width: "100%", padding: suffix ? "10px 40px 10px 0" : "10px 0",
             background: "transparent", border: "none",
-            borderBottom: "1.5px solid #d2c2cb",
+            borderBottom: `1.5px solid ${base}`,
             color: "#1f1a1d", fontSize: 14, outline: "none",
             transition: "border-color 200ms ease", boxSizing: "border-box" as const,
           }}
-          onFocus={e => { e.currentTarget.style.borderBottomColor = "#3A1335"; e.currentTarget.style.borderBottomWidth = "2px"; }}
-          onBlur={e  => { e.currentTarget.style.borderBottomColor = "#d2c2cb"; e.currentTarget.style.borderBottomWidth = "1.5px"; }}
+          onFocus={e => { e.currentTarget.style.borderBottomColor = error ? ERR_COLOR : "#3A1335"; e.currentTarget.style.borderBottomWidth = "2px"; }}
+          onBlur={e  => { e.currentTarget.style.borderBottomColor = base; e.currentTarget.style.borderBottomWidth = "1.5px"; }}
         />
         {suffix && (
           <span style={{
@@ -135,17 +148,20 @@ function Field({
           }}>{suffix}</span>
         )}
       </div>
-      {hint && <p style={{ fontSize: 11, color: "#80747b", marginTop: 2 }}>{hint}</p>}
+      {error
+        ? <p style={{ fontSize: 11, color: ERR_COLOR, marginTop: 2 }}>{error}</p>
+        : hint && <p style={{ fontSize: 11, color: "#80747b", marginTop: 2 }}>{hint}</p>}
     </div>
   );
 }
 
 function Select({
-  label, options, hint = "", value = "", onChange, loading: loadingOpts = false,
+  label, options, hint = "", value = "", onChange, loading: loadingOpts = false, error = "",
 }: {
   label: string; options: { value: string; label: string }[];
-  hint?: string; value?: string; onChange?: (v: string) => void; loading?: boolean;
+  hint?: string; value?: string; onChange?: (v: string) => void; loading?: boolean; error?: string;
 }) {
+  const base = error ? ERR_COLOR : "#d2c2cb";
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <label style={{
@@ -156,10 +172,11 @@ function Select({
         value={value}
         onChange={e => onChange?.(e.target.value)}
         disabled={loadingOpts}
+        aria-invalid={error ? true : undefined}
         style={{
           width: "100%", padding: "10px 0",
           background: "transparent", border: "none",
-          borderBottom: "1.5px solid #d2c2cb",
+          borderBottom: `1.5px solid ${base}`,
           color: value ? "#1f1a1d" : "#80747b",
           fontSize: 14, outline: "none", appearance: "none" as const,
           boxSizing: "border-box" as const,
@@ -167,13 +184,15 @@ function Select({
           opacity: loadingOpts ? 0.5 : 1,
           transition: "opacity 150ms ease",
         }}
-        onFocus={e => { e.currentTarget.style.borderBottomColor = "#3A1335"; e.currentTarget.style.borderBottomWidth = "2px"; }}
-        onBlur={e  => { e.currentTarget.style.borderBottomColor = "#d2c2cb"; e.currentTarget.style.borderBottomWidth = "1.5px"; }}
+        onFocus={e => { e.currentTarget.style.borderBottomColor = error ? ERR_COLOR : "#3A1335"; e.currentTarget.style.borderBottomWidth = "2px"; }}
+        onBlur={e  => { e.currentTarget.style.borderBottomColor = base; e.currentTarget.style.borderBottomWidth = "1.5px"; }}
       >
         <option value="">{loadingOpts ? "Cargando…" : "Seleccionar…"}</option>
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
-      {hint && <p style={{ fontSize: 11, color: "#80747b", marginTop: 2 }}>{hint}</p>}
+      {error
+        ? <p style={{ fontSize: 11, color: ERR_COLOR, marginTop: 2 }}>{error}</p>
+        : hint && <p style={{ fontSize: 11, color: "#80747b", marginTop: 2 }}>{hint}</p>}
     </div>
   );
 }
@@ -251,10 +270,11 @@ function CheckToggle({ label, checked, onChange }: {
 
 // ─── PERSONA FIELDS (reutilizable para asegurado y tomador) ───────────────────
 function PersonaFields({
-  data, onChange,
+  data, onChange, errors = {},
 }: {
   data: PersonaFormState;
   onChange: (k: keyof PersonaFormState, v: string) => void;
+  errors?: FieldErrors<keyof PersonaFormState>;
 }) {
   const NAC_OPTS = [
     { value: "V", label: "V — Venezolano/a" },
@@ -277,32 +297,32 @@ function PersonaFields({
   return (
     <>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Select label="Nacionalidad" options={NAC_OPTS}
+        <Select label="Nacionalidad" options={NAC_OPTS} error={errors.nacionalidad}
           value={data.nacionalidad} onChange={v => onChange("nacionalidad", v)} />
-        <Field label="Cédula / RIF" type="number"
+        <Field label="Cédula / RIF" inputMode="numeric" maxLength={12} error={errors.cedulaRif}
           value={data.cedulaRif}
           onChange={v => onChange("cedulaRif", v)} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label="Nombres" value={data.nombres} onChange={v => onChange("nombres", v)} />
-        <Field label="Apellidos / Razón Social"
+        <Field label="Nombres" value={data.nombres} error={errors.nombres} onChange={v => onChange("nombres", v)} />
+        <Field label="Apellidos / Razón Social" error={errors.apellidosRazonSocial}
           value={data.apellidosRazonSocial} onChange={v => onChange("apellidosRazonSocial", v)} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Select label="Sexo" options={SEXO_OPTS} value={data.sexo} onChange={v => onChange("sexo", v)} />
-        <Select label="Estado civil" options={CIVIL_OPTS} value={data.edoCivil} onChange={v => onChange("edoCivil", v)} />
+        <Select label="Sexo" options={SEXO_OPTS} error={errors.sexo} value={data.sexo} onChange={v => onChange("sexo", v)} />
+        <Select label="Estado civil" options={CIVIL_OPTS} error={errors.edoCivil} value={data.edoCivil} onChange={v => onChange("edoCivil", v)} />
       </div>
-      <Field label="Fecha de nacimiento" placeholder="DD/MM/YYYY"
-        hint="Dejar en blanco si es persona jurídica"
+      <Field label="Fecha de nacimiento" placeholder="DD/MM/YYYY" inputMode="numeric" maxLength={10}
+        hint="Dejar en blanco si es persona jurídica" error={errors.feNacimiento}
         value={data.feNacimiento} onChange={v => onChange("feNacimiento", v)} />
-      <Field label="Correo electrónico" type="email"
+      <Field label="Correo electrónico" type="email" inputMode="email" error={errors.email}
         value={data.email} onChange={v => onChange("email", v)} />
-      <Field label="Dirección de residencia"
+      <Field label="Dirección de residencia" error={errors.direccion}
         value={data.direccion} onChange={v => onChange("direccion", v)} />
       <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: 12 }}>
-        <Field label="Cód. área" placeholder="212"
+        <Field label="Cód. área" placeholder="212" inputMode="numeric" maxLength={4} error={errors.cdAreaTlf}
           value={data.cdAreaTlf} onChange={v => onChange("cdAreaTlf", v)} />
-        <Field label="Teléfono" type="tel"
+        <Field label="Teléfono" type="tel" inputMode="tel" maxLength={12} error={errors.nuTlf}
           value={data.nuTlf} onChange={v => onChange("nuTlf", v)} />
       </div>
       <Field label="Profesión" hint="Dejar en blanco si es persona jurídica"
@@ -335,6 +355,14 @@ export default function CotizarPage() {
   const [loadingCiudades, setLoadingCiudades] = useState(false);
   const [loadingSectores, setLoadingSectores] = useState(false);
   const [apiError,        setApiError]        = useState<string | null>(null);
+
+  // ── Client-side validation state (hogar) ─────────────────────────────────
+  type HogarErrors = {
+    inmueble: FieldErrors<keyof HogarFormState["inmueble"]>;
+    asegurado: FieldErrors<keyof PersonaFormState>;
+    tomador: FieldErrors<keyof PersonaFormState>;
+  };
+  const [hogarErrors, setHogarErrors] = useState<HogarErrors | null>(null);
 
   // ── Results ──────────────────────────────────────────────────────────────────
   const [propuestasApi, setPropuestasApi] = useState<Propuesta[] | null>(null);
@@ -411,14 +439,28 @@ export default function CotizarPage() {
   const updS = (k: keyof SaludForm,       v: string) => setSaludData(p      => ({ ...p, [k]: v }));
   const updP = (k: keyof PatrimonialForm, v: string) => setPatrimonialData(p => ({ ...p, [k]: v }));
 
-  const updHI = (k: keyof HogarFormState["inmueble"], v: string) =>
-    setHogarData(p => ({ ...p, inmueble: { ...p.inmueble, [k]: v } }));
+  // Every hogar-form write is sanitised at the edge (strip non-digits, cap
+  // length, collapse whitespace) so state only ever holds clean values.
+  const updHI = (k: keyof HogarFormState["inmueble"], v: string) => {
+    const clean = sanitizeInmuebleField(k, v);
+    setHogarData(p => ({ ...p, inmueble: { ...p.inmueble, [k]: clean } }));
+    if (hogarErrors) setHogarErrors(e => e && { ...e, inmueble: { ...e.inmueble, [k]: undefined } });
+  };
 
-  const updHA = (k: keyof PersonaFormState, v: string) =>
-    setHogarData(p => ({ ...p, asegurado: { ...p.asegurado, [k]: v } }));
+  const updHA = (k: keyof PersonaFormState, v: string) => {
+    const clean = sanitizePersonaField(k, v);
+    setHogarData(p => ({ ...p, asegurado: { ...p.asegurado, [k]: clean } }));
+    if (hogarErrors) setHogarErrors(e => e && { ...e, asegurado: { ...e.asegurado, [k]: undefined } });
+  };
 
-  const updHT = (k: keyof PersonaFormState, v: string) =>
-    setHogarData(p => ({ ...p, tomador: { ...p.tomador, [k]: v } }));
+  const updHT = (k: keyof PersonaFormState, v: string) => {
+    const clean = sanitizePersonaField(k, v);
+    setHogarData(p => ({ ...p, tomador: { ...p.tomador, [k]: clean } }));
+    if (hogarErrors) setHogarErrors(e => e && { ...e, tomador: { ...e.tomador, [k]: undefined } });
+  };
+
+  const clearInmuebleError = (k: keyof HogarFormState["inmueble"]) =>
+    setHogarErrors(e => e && { ...e, inmueble: { ...e.inmueble, [k]: undefined } });
 
   const handleEstadoChange = (nextEstado: string) => {
     const deEstado = estadoOpts.find(o => o.value === nextEstado)?.label ?? "";
@@ -433,6 +475,7 @@ export default function CotizarPage() {
       },
     }));
     setSectores([]);
+    clearInmuebleError("cdEstado");
   };
 
   const handleCiudadChange = (nextCiudad: string) => {
@@ -449,6 +492,7 @@ export default function CotizarPage() {
         cdSector: "", deSector: "",
       },
     }));
+    clearInmuebleError("cdCiudad");
   };
 
   const handleSectorChange = (cdSector: string) => {
@@ -457,10 +501,28 @@ export default function CotizarPage() {
       ...p,
       inmueble: { ...p.inmueble, cdSector, deSector: sector?.descripcion ?? "" },
     }));
+    clearInmuebleError("cdSector");
+  };
+
+  /** Validate the hogar form client-side. Returns true when safe to submit. */
+  const validateHogar = (): boolean => {
+    const errs: HogarErrors = {
+      inmueble: validateInmueble(hogarData.inmueble),
+      asegurado: validatePersona(hogarData.asegurado),
+      tomador: hogarData.tomadorIgualAsegurado ? {} : validatePersona(hogarData.tomador),
+    };
+    const bad = hasErrors(errs.inmueble) || hasErrors(errs.asegurado) || hasErrors(errs.tomador);
+    setHogarErrors(bad ? errs : null);
+    return !bad;
   };
 
   const handleCalcular = async () => {
     if (!CREDENTIALS_READY) return;
+    // Never query the API with an incomplete / malformed hogar form.
+    if (ramo === "hogar" && !validateHogar()) {
+      setApiError("Revisá los campos marcados antes de calcular.");
+      return;
+    }
     setLoading(true);
     setApiError(null);
     try {
@@ -485,6 +547,7 @@ export default function CotizarPage() {
     setPatrimonialData({ tipoRiesgo: "", valorBienes: "", direccion: "", metros: "" });
     setPropuestasApi(null);
     setApiError(null);
+    setHogarErrors(null);
     setCiudades([]); setSectores([]);
   };
 
@@ -780,6 +843,7 @@ export default function CotizarPage() {
                       options={estadoOpts}
                       hint={loadingListas ? "Cargando desde Seguros Caracas…" : undefined}
                       loading={loadingListas}
+                      error={hogarErrors?.inmueble.cdEstado}
                       value={hogarData.inmueble.cdEstado}
                       onChange={handleEstadoChange}
                     />
@@ -788,6 +852,7 @@ export default function CotizarPage() {
                       options={(cdEstado ? ciudades : []).map(c => ({ value: c.codigo, label: c.descripcion }))}
                       hint="Depende del estado seleccionado"
                       loading={loadingCiudades}
+                      error={hogarErrors?.inmueble.cdCiudad}
                       value={hogarData.inmueble.cdCiudad}
                       onChange={handleCiudadChange}
                     />
@@ -798,12 +863,14 @@ export default function CotizarPage() {
                     options={(cdCiudad ? sectores : []).map(s => ({ value: s.codigo, label: s.descripcion }))}
                     hint="Depende de la ciudad seleccionada"
                     loading={loadingSectores}
+                    error={hogarErrors?.inmueble.cdSector}
                     value={hogarData.inmueble.cdSector}
                     onChange={handleSectorChange}
                   />
 
                   <Select
                     label="Índole del inmueble"
+                    error={hogarErrors?.inmueble.cdIndole}
                     options={indoleOpts.length > 0 ? indoleOpts : [
                       { value: "1", label: "Apartamento Residencial" },
                       { value: "2", label: "Casa Residencial"        },
@@ -825,17 +892,20 @@ export default function CotizarPage() {
 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                     <Field label="Nombre del inmueble" placeholder="Ej: Torre B, Piso 4, Apto 4-C"
+                      error={hogarErrors?.inmueble.deInmueble}
                       value={hogarData.inmueble.deInmueble} onChange={v => updHI("deInmueble", v)} />
-                    <Field label="Calle / Avenida"
+                    <Field label="Calle / Avenida" error={hogarErrors?.inmueble.deCalle}
                       value={hogarData.inmueble.deCalle} onChange={v => updHI("deCalle", v)} />
                   </div>
                   <Field label="Dirección (línea 1)" hint="Máximo 50 caracteres"
+                    error={hogarErrors?.inmueble.deDireccion1} maxLength={50}
                     value={hogarData.inmueble.deDireccion1} onChange={v => updHI("deDireccion1", v)} />
                   <Field label="Dirección (línea 2)" hint="Opcional — máximo 50 caracteres"
+                    error={hogarErrors?.inmueble.deDireccion2} maxLength={50}
                     value={hogarData.inmueble.deDireccion2} onChange={v => updHI("deDireccion2", v)} />
 
                   <SectionTitle>Datos del asegurado</SectionTitle>
-                  <PersonaFields data={hogarData.asegurado} onChange={updHA} />
+                  <PersonaFields data={hogarData.asegurado} onChange={updHA} errors={hogarErrors?.asegurado} />
 
                   <SectionTitle>Datos del tomador</SectionTitle>
                   <CheckToggle
@@ -844,7 +914,7 @@ export default function CotizarPage() {
                     onChange={v => setHogarData(p => ({ ...p, tomadorIgualAsegurado: v }))}
                   />
                   {!hogarData.tomadorIgualAsegurado && (
-                    <PersonaFields data={hogarData.tomador} onChange={updHT} />
+                    <PersonaFields data={hogarData.tomador} onChange={updHT} errors={hogarErrors?.tomador} />
                   )}
                 </>}
 

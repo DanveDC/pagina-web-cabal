@@ -4,14 +4,14 @@ import { z } from "zod";
 // Everything the browser can influence is validated here before it reaches the
 // upstream web service. Keep these in sync with src/types/seguros-caracas.ts.
 
-// Codes from SC are short alphanumeric tokens. Reject anything with control
-// chars, spaces, or an unreasonable length.
+// Codes from SC are short alphanumeric tokens (e.g. "01", "0101"). Reject
+// anything with punctuation, control chars, spaces, or an unreasonable length.
 const code = z
   .string()
   .trim()
   .min(1)
   .max(24)
-  .regex(/^[A-Za-z0-9._-]+$/, "invalid code format");
+  .regex(/^[A-Za-z0-9]+$/, "invalid code format");
 
 const shortText = z.string().trim().max(120);
 const address = z.string().trim().max(50);

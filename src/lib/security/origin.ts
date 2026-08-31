@@ -1,5 +1,14 @@
 import "server-only";
-import { ALLOWED_ORIGINS, isProd } from "./env";
+import { ALLOWED_ORIGINS, ALLOWED_ORIGINS_UNSET, isProd } from "./env";
+
+let warned = false;
+function warnOnce() {
+  if (warned) return;
+  warned = true;
+  console.warn(
+    "[security] ALLOWED_ORIGINS is not set in production — API routes are same-origin-only."
+  );
+}
 
 // ─── Allowed-origin enforcement ────────────────────────────────────────────
 // Browsers send `Origin` on cross-origin and all non-GET requests, and send
@@ -12,6 +21,7 @@ import { ALLOWED_ORIGINS, isProd } from "./env";
 // is the real access control.
 
 export function isAllowedOrigin(req: Request, opts: { allowMissing?: boolean } = {}): boolean {
+  if (ALLOWED_ORIGINS_UNSET) warnOnce();
   const origin = req.headers.get("origin");
   const referer = req.headers.get("referer");
   const candidate = origin ?? safeOrigin(referer);

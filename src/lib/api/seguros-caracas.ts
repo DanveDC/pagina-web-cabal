@@ -12,6 +12,12 @@ import type {
   SuscribirOk,
   ApiErrorResponse,
 } from "@/types/seguros-caracas";
+import {
+  checkCiudadesQuery,
+  checkSectoresQuery,
+  checkClienteQuery,
+} from "@/lib/validation/seguros-caracas";
+import { suscribirBody } from "@/lib/api/seguros-caracas.schema";
 
 const BASE = "/api/seguros-caracas";
 const CLIENT_TIMEOUT_MS = 15_000;
@@ -81,18 +87,24 @@ export const segurosCaracasClient = {
     return request<ListasInicialesOk | ApiErrorResponse>("/listas", { method: "GET", signal });
   },
 
+  // Params are sanitised + schema-checked here; a known-bad request is never
+  // sent to the network (the server proxy validates again regardless).
   getCiudades(cdEstado: string, signal?: AbortSignal) {
-    return request<CiudadesOk | ApiErrorResponse>(`/ciudades${toQuery({ cdEstado })}`, {
+    const q = checkCiudadesQuery(cdEstado);
+    if (!q.ok) return Promise.resolve(errResult(0, "invalid_request"));
+    return request<CiudadesOk | ApiErrorResponse>(`/ciudades${toQuery(q.params)}`, {
       method: "GET",
       signal,
     });
   },
 
   getSectores(cdEstado: string, cdCiudad: string, signal?: AbortSignal) {
-    return request<SectoresOk | ApiErrorResponse>(
-      `/sectores${toQuery({ cdEstado, cdCiudad })}`,
-      { method: "GET", signal }
-    );
+    const q = checkSectoresQuery(cdEstado, cdCiudad);
+    if (!q.ok) return Promise.resolve(errResult(0, "invalid_request"));
+    return request<SectoresOk | ApiErrorResponse>(`/sectores${toQuery(q.params)}`, {
+      method: "GET",
+      signal,
+    });
   },
 
   // Broker credentials (cdProductor / cdConvenio) are injected by the proxy.
@@ -101,13 +113,19 @@ export const segurosCaracasClient = {
   },
 
   getCliente(nacionalidad: string, cedulaRif: string, signal?: AbortSignal) {
-    return request<ClienteOk | ApiErrorResponse>(
-      `/cliente${toQuery({ nacionalidad, cedulaRif })}`,
-      { method: "GET", signal }
-    );
+    const q = checkClienteQuery(nacionalidad, cedulaRif);
+    if (!q.ok) return Promise.resolve(errResult(0, "invalid_request"));
+    return request<ClienteOk | ApiErrorResponse>(`/cliente${toQuery(q.params)}`, {
+      method: "GET",
+      signal,
+    });
   },
 
   suscribir(payload: SuscribirRequest, signal?: AbortSignal) {
+    // Final client-side gate: the payload must satisfy the wire schema.
+    if (!suscribirBody.safeParse(payload).success) {
+      return Promise.resolve(errResult(0, "invalid_request"));
+    }
     return request<SuscribirOk | ApiErrorResponse>("/suscribir", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

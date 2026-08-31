@@ -27,13 +27,11 @@ export const isProd = process.env.NODE_ENV === "production";
 export const ALLOWED_ORIGINS: string[] = (() => {
   const configured = list(process.env.ALLOWED_ORIGINS);
   if (configured.length > 0) return configured;
-  if (isProd) {
-    console.warn(
-      "[security] ALLOWED_ORIGINS is not set in production — API routes fall back to same-origin-only."
-    );
-  }
   return isProd ? [] : ["http://localhost:3000", "http://127.0.0.1:3000"];
 })();
+
+/** True in production when no allowlist is configured (same-origin-only fallback). */
+export const ALLOWED_ORIGINS_UNSET = isProd && ALLOWED_ORIGINS.length === 0;
 
 export const security = {
   /**
