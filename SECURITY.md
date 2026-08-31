@@ -60,8 +60,11 @@ Defense in depth, in order:
    `suscribir`; everything else `404`/`405`. Extra path segments are ignored —
    the upstream path always comes from the fixed `ROUTE_MAP`.
 6. **Schema validation** — every client-controlled value is parsed with Zod
-   (`*.schema.ts`); unexpected keys are rejected (`.strict()`);
-   `documentos[].urlDocumento` must be an `https:` URL.
+   (`*.schema.ts`); unexpected keys are rejected (`.strict()`); catalog codes
+   are alphanumeric-only; `documentos[].urlDocumento` must be an `https:` URL.
+   The browser runs the **same schemas** (`src/lib/validation/seguros-caracas.ts`)
+   plus field-level sanitisation before any request is sent — a known-bad
+   request never leaves the client, and the server re-validates regardless.
 7. **Server-side credential injection** — `cdProductor` / `cdConvenio` /
    `cdUsuario` are set from env *after* the spread of client data; the client
    cannot supply or override them.
