@@ -407,7 +407,22 @@ export default function LandingPage() {
           ))}
         </nav>
 
-        <div className="nav-desktop">
+        <div className="nav-desktop" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <a href="/emitir" style={{
+            display: "inline-flex", alignItems: "center",
+            padding: "10px 20px", borderRadius: "4px",
+            fontSize: "12px", fontWeight: 700,
+            letterSpacing: "0.1em", textTransform: "uppercase",
+            textDecoration: "none",
+            color: "#C2A378", backgroundColor: "transparent",
+            border: "1.5px solid rgba(194,163,120,0.6)",
+            transition: "all 140ms ease",
+          }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = "rgba(194,163,120,0.1)"; e.currentTarget.style.borderColor = "#C2A378"; }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.borderColor = "rgba(194,163,120,0.6)"; }}
+          >
+            Emitir Póliza
+          </a>
           <a href="/cotizar" style={{
             display: "inline-flex", alignItems: "center",
             padding: "10px 24px", borderRadius: "4px",
@@ -454,6 +469,12 @@ export default function LandingPage() {
               {l.label}
             </a>
           ))}
+          <a href="/emitir" style={{
+            fontSize: "12px", fontWeight: 700, padding: "12px 24px", borderRadius: "4px",
+            backgroundColor: "transparent", color: "#C2A378", textDecoration: "none", textAlign: "center",
+            letterSpacing: "0.1em", textTransform: "uppercase",
+            border: "1.5px solid rgba(194,163,120,0.6)",
+          }}>Emitir Póliza</a>
           <a href="/cotizar" style={{
             fontSize: "12px", fontWeight: 700, padding: "12px 24px", borderRadius: "4px",
             backgroundColor: "white", color: "#3a1335", textDecoration: "none", textAlign: "center",
