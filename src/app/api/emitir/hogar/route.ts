@@ -4,6 +4,8 @@
 // browser.
 
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, clientIp } from "@/lib/security/rate-limit";
+import { rateLimit as rlConfig } from "@/lib/security/env";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,6 +14,28 @@ export async function POST(req: NextRequest) {
   const token = process.env.SC_PROXY_TOKEN;
   if (!token) {
     return NextResponse.json({ error: "service_disabled" }, { status: 503 });
+  }
+
+  // Rate-limit here, at the real entry point: the downstream fetch to the SC
+  // proxy is server-to-server and carries no client IP, so its limiter would
+  // otherwise bucket every emisión into one global key.
+  const rl = rateLimit(
+    `POST:emitir-hogar:${clientIp(req)}`,
+    rlConfig.sensitiveMax,
+    rlConfig.windowMs
+  );
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: "rate_limited" },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rl.retryAfterSec),
+          "RateLimit-Limit": String(rl.limit),
+          "RateLimit-Remaining": "0",
+        },
+      }
+    );
   }
 
   let body: unknown;
