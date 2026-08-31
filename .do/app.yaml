@@ -1,0 +1,78 @@
+# DigitalOcean App Platform spec — Cabal Corretaje
+# Deploy:  doctl apps create --spec .do/app.yaml
+# Update:  doctl apps update <APP_ID> --spec .do/app.yaml
+#
+# Secret values (SC_*, ALLOWED_ORIGINS) are NOT stored here. Set them once in
+# the App Platform dashboard (Settings → App-Level Environment Variables) or via
+# `doctl apps update` with type: SECRET. Placeholders below document the keys.
+
+name: cabal-web
+region: nyc
+features:
+  - buildpack-stack=ubuntu-22
+
+ingress:
+  rules:
+    - match:
+        path:
+          prefix: /
+      component:
+        name: web
+
+services:
+  - name: web
+    dockerfile_path: Dockerfile
+    source_dir: /
+    github:
+      repo: DanveDC/cabal-web
+      branch: main
+      deploy_on_push: true
+
+    http_port: 3000
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-1gb
+
+    health_check:
+      http_path: /api/health
+      initial_delay_seconds: 20
+      period_seconds: 20
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+
+    envs:
+      - key: NODE_ENV
+        scope: RUN_AND_BUILD_TIME
+        value: production
+      - key: NEXT_TELEMETRY_DISABLED
+        scope: RUN_AND_BUILD_TIME
+        value: "1"
+
+      # Public, inlined at build time.
+      - key: NEXT_PUBLIC_SC_ENABLED
+        scope: BUILD_TIME
+        value: "false"
+
+      # ── Set these in the dashboard before enabling the proxy ──
+      # SC_BASE_URL is intentionally NOT defaulted here: with the proxy enabled
+      # and SC_BASE_URL unset, every SC route returns 503 (fail loud, never
+      # silently hit the test host). Set it to the test or prod SC host when
+      # wiring the integration.
+      - key: SC_PROXY_ENABLED
+        scope: RUN_TIME
+        value: "false"
+      - key: SC_PRODUCTOR
+        scope: RUN_TIME
+        type: SECRET
+        value: "EV[REPLACE_IN_DASHBOARD]"
+      - key: SC_CONVENIO
+        scope: RUN_TIME
+        type: SECRET
+        value: "EV[REPLACE_IN_DASHBOARD]"
+      - key: SC_PROXY_TOKEN
+        scope: RUN_TIME
+        type: SECRET
+        value: "EV[REPLACE_IN_DASHBOARD]"
+      - key: ALLOWED_ORIGINS
+        scope: RUN_TIME
+        value: https://cabalasesores.com,https://www.cabalasesores.com

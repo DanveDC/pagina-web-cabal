@@ -2,16 +2,22 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { segurosCaracasClient } from "@/lib/api/seguros-caracas";
 import { PERSONA_EMPTY } from "@/types/seguros-caracas";
-import type { HogarFormState, SuscribirPersona, Propuesta, Ciudad, Sector } from "@/types/seguros-caracas";
+import type { HogarFormState, PersonaFormState, Propuesta, Ciudad, Sector } from "@/types/seguros-caracas";
+import {
+  sanitizePersonaField, sanitizeInmuebleField,
+  validatePersona, validateInmueble, hasErrors,
+  type FieldErrors,
+} from "@/lib/validation/seguros-caracas";
 
 // ─── CREDENTIALS ─────────────────────────────────────────────────────────────
-// Fill these in when Seguros Caracas provides the broker credentials.
-const SC_PRODUCTOR = "";
-const SC_CONVENIO  = "";
-const CREDENTIALS_READY = Boolean(SC_PRODUCTOR && SC_CONVENIO);
+// Broker credentials live ONLY on the server (SC_PRODUCTOR / SC_CONVENIO env
+// vars, injected by the /api/seguros-caracas proxy). The browser only learns
+// whether the integration is live via this public, non-secret flag.
+const CREDENTIALS_READY = process.env.NEXT_PUBLIC_SC_ENABLED === "true";
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
 type Ramo = "automovil" | "salud" | "hogar" | "patrimoniales";
@@ -99,12 +105,17 @@ function StepDot({ n, active, done }: { n: number; active: boolean; done: boolea
   );
 }
 
+const ERR_COLOR = "#B91C1C";
+
 function Field({
   label, type = "text", placeholder = "", hint = "", suffix = "", value = "", onChange,
+  error = "", inputMode, maxLength,
 }: {
   label: string; type?: string; placeholder?: string; hint?: string;
   suffix?: string; value?: string; onChange?: (v: string) => void;
+  error?: string; inputMode?: "text" | "numeric" | "email" | "tel"; maxLength?: number;
 }) {
+  const base = error ? ERR_COLOR : "#d2c2cb";
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <label style={{
@@ -114,18 +125,21 @@ function Field({
       <div style={{ position: "relative" }}>
         <input
           type={type}
+          inputMode={inputMode}
+          maxLength={maxLength}
           placeholder={placeholder || label}
           value={value}
           onChange={e => onChange?.(e.target.value)}
+          aria-invalid={error ? true : undefined}
           style={{
             width: "100%", padding: suffix ? "10px 40px 10px 0" : "10px 0",
             background: "transparent", border: "none",
-            borderBottom: "1.5px solid #d2c2cb",
+            borderBottom: `1.5px solid ${base}`,
             color: "#1f1a1d", fontSize: 14, outline: "none",
             transition: "border-color 200ms ease", boxSizing: "border-box" as const,
           }}
-          onFocus={e => { e.currentTarget.style.borderBottomColor = "#3A1335"; e.currentTarget.style.borderBottomWidth = "2px"; }}
-          onBlur={e  => { e.currentTarget.style.borderBottomColor = "#d2c2cb"; e.currentTarget.style.borderBottomWidth = "1.5px"; }}
+          onFocus={e => { e.currentTarget.style.borderBottomColor = error ? ERR_COLOR : "#3A1335"; e.currentTarget.style.borderBottomWidth = "2px"; }}
+          onBlur={e  => { e.currentTarget.style.borderBottomColor = base; e.currentTarget.style.borderBottomWidth = "1.5px"; }}
         />
         {suffix && (
           <span style={{
@@ -134,17 +148,20 @@ function Field({
           }}>{suffix}</span>
         )}
       </div>
-      {hint && <p style={{ fontSize: 11, color: "#80747b", marginTop: 2 }}>{hint}</p>}
+      {error
+        ? <p style={{ fontSize: 11, color: ERR_COLOR, marginTop: 2 }}>{error}</p>
+        : hint && <p style={{ fontSize: 11, color: "#80747b", marginTop: 2 }}>{hint}</p>}
     </div>
   );
 }
 
 function Select({
-  label, options, hint = "", value = "", onChange, loading: loadingOpts = false,
+  label, options, hint = "", value = "", onChange, loading: loadingOpts = false, error = "",
 }: {
   label: string; options: { value: string; label: string }[];
-  hint?: string; value?: string; onChange?: (v: string) => void; loading?: boolean;
+  hint?: string; value?: string; onChange?: (v: string) => void; loading?: boolean; error?: string;
 }) {
+  const base = error ? ERR_COLOR : "#d2c2cb";
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <label style={{
@@ -155,10 +172,11 @@ function Select({
         value={value}
         onChange={e => onChange?.(e.target.value)}
         disabled={loadingOpts}
+        aria-invalid={error ? true : undefined}
         style={{
           width: "100%", padding: "10px 0",
           background: "transparent", border: "none",
-          borderBottom: "1.5px solid #d2c2cb",
+          borderBottom: `1.5px solid ${base}`,
           color: value ? "#1f1a1d" : "#80747b",
           fontSize: 14, outline: "none", appearance: "none" as const,
           boxSizing: "border-box" as const,
@@ -166,13 +184,15 @@ function Select({
           opacity: loadingOpts ? 0.5 : 1,
           transition: "opacity 150ms ease",
         }}
-        onFocus={e => { e.currentTarget.style.borderBottomColor = "#3A1335"; e.currentTarget.style.borderBottomWidth = "2px"; }}
-        onBlur={e  => { e.currentTarget.style.borderBottomColor = "#d2c2cb"; e.currentTarget.style.borderBottomWidth = "1.5px"; }}
+        onFocus={e => { e.currentTarget.style.borderBottomColor = error ? ERR_COLOR : "#3A1335"; e.currentTarget.style.borderBottomWidth = "2px"; }}
+        onBlur={e  => { e.currentTarget.style.borderBottomColor = base; e.currentTarget.style.borderBottomWidth = "1.5px"; }}
       >
         <option value="">{loadingOpts ? "Cargando…" : "Seleccionar…"}</option>
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
-      {hint && <p style={{ fontSize: 11, color: "#80747b", marginTop: 2 }}>{hint}</p>}
+      {error
+        ? <p style={{ fontSize: 11, color: ERR_COLOR, marginTop: 2 }}>{error}</p>
+        : hint && <p style={{ fontSize: 11, color: "#80747b", marginTop: 2 }}>{hint}</p>}
     </div>
   );
 }
@@ -250,10 +270,11 @@ function CheckToggle({ label, checked, onChange }: {
 
 // ─── PERSONA FIELDS (reutilizable para asegurado y tomador) ───────────────────
 function PersonaFields({
-  data, onChange,
+  data, onChange, errors = {},
 }: {
-  data: SuscribirPersona;
-  onChange: (k: keyof SuscribirPersona, v: string) => void;
+  data: PersonaFormState;
+  onChange: (k: keyof PersonaFormState, v: string) => void;
+  errors?: FieldErrors<keyof PersonaFormState>;
 }) {
   const NAC_OPTS = [
     { value: "V", label: "V — Venezolano/a" },
@@ -276,32 +297,32 @@ function PersonaFields({
   return (
     <>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Select label="Nacionalidad" options={NAC_OPTS}
+        <Select label="Nacionalidad" options={NAC_OPTS} error={errors.nacionalidad}
           value={data.nacionalidad} onChange={v => onChange("nacionalidad", v)} />
-        <Field label="Cédula / RIF" type="number"
-          value={data.cedulaRif ? String(data.cedulaRif) : ""}
+        <Field label="Cédula / RIF" inputMode="numeric" maxLength={12} error={errors.cedulaRif}
+          value={data.cedulaRif}
           onChange={v => onChange("cedulaRif", v)} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label="Nombres" value={data.nombres} onChange={v => onChange("nombres", v)} />
-        <Field label="Apellidos / Razón Social"
+        <Field label="Nombres" value={data.nombres} error={errors.nombres} onChange={v => onChange("nombres", v)} />
+        <Field label="Apellidos / Razón Social" error={errors.apellidosRazonSocial}
           value={data.apellidosRazonSocial} onChange={v => onChange("apellidosRazonSocial", v)} />
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Select label="Sexo" options={SEXO_OPTS} value={data.sexo} onChange={v => onChange("sexo", v)} />
-        <Select label="Estado civil" options={CIVIL_OPTS} value={data.edoCivil} onChange={v => onChange("edoCivil", v)} />
+        <Select label="Sexo" options={SEXO_OPTS} error={errors.sexo} value={data.sexo} onChange={v => onChange("sexo", v)} />
+        <Select label="Estado civil" options={CIVIL_OPTS} error={errors.edoCivil} value={data.edoCivil} onChange={v => onChange("edoCivil", v)} />
       </div>
-      <Field label="Fecha de nacimiento" placeholder="DD/MM/YYYY"
-        hint="Dejar en blanco si es persona jurídica"
+      <Field label="Fecha de nacimiento" placeholder="DD/MM/YYYY" inputMode="numeric" maxLength={10}
+        hint="Dejar en blanco si es persona jurídica" error={errors.feNacimiento}
         value={data.feNacimiento} onChange={v => onChange("feNacimiento", v)} />
-      <Field label="Correo electrónico" type="email"
+      <Field label="Correo electrónico" type="email" inputMode="email" error={errors.email}
         value={data.email} onChange={v => onChange("email", v)} />
-      <Field label="Dirección de residencia"
+      <Field label="Dirección de residencia" error={errors.direccion}
         value={data.direccion} onChange={v => onChange("direccion", v)} />
       <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: 12 }}>
-        <Field label="Cód. área" placeholder="212"
+        <Field label="Cód. área" placeholder="212" inputMode="numeric" maxLength={4} error={errors.cdAreaTlf}
           value={data.cdAreaTlf} onChange={v => onChange("cdAreaTlf", v)} />
-        <Field label="Teléfono" type="tel"
+        <Field label="Teléfono" type="tel" inputMode="tel" maxLength={12} error={errors.nuTlf}
           value={data.nuTlf} onChange={v => onChange("nuTlf", v)} />
       </div>
       <Field label="Profesión" hint="Dejar en blanco si es persona jurídica"
@@ -330,47 +351,87 @@ export default function CotizarPage() {
   const [indoleOpts,      setIndoleOpts]      = useState<{ value: string; label: string }[]>([]);
   const [ciudades,        setCiudades]        = useState<Ciudad[]>([]);
   const [sectores,        setSectores]        = useState<Sector[]>([]);
+  const [loadingListas,   setLoadingListas]   = useState(false);
   const [loadingCiudades, setLoadingCiudades] = useState(false);
   const [loadingSectores, setLoadingSectores] = useState(false);
+  const [apiError,        setApiError]        = useState<string | null>(null);
+
+  // ── Client-side validation state (hogar) ─────────────────────────────────
+  type HogarErrors = {
+    inmueble: FieldErrors<keyof HogarFormState["inmueble"]>;
+    asegurado: FieldErrors<keyof PersonaFormState>;
+    tomador: FieldErrors<keyof PersonaFormState>;
+  };
+  const [hogarErrors, setHogarErrors] = useState<HogarErrors | null>(null);
 
   // ── Results ──────────────────────────────────────────────────────────────────
   const [propuestasApi, setPropuestasApi] = useState<Propuesta[] | null>(null);
 
   // ── Effects — hogar API calls ─────────────────────────────────────────────
+  // Each effect owns an AbortController so a stale in-flight response can never
+  // clobber a newer selection. All state writes happen inside the async flow.
+  // Parent-select changes clear dependent fields in the change handlers
+  // (event-driven); stale option arrays are masked at render time.
+  const cdEstado = hogarData.inmueble.cdEstado;
+  const cdCiudad = hogarData.inmueble.cdCiudad;
+  const [listasRetry, setListasRetry] = useState(0);
+  const needsListas = ramo === "hogar" && estadoOpts.length === 0;
+
   useEffect(() => {
-    if (ramo !== "hogar") return;
-    segurosCaracasClient.getListasIniciales().then(res => {
-      if ("estados" in res) {
-        setEstadoOpts(res.estados.map(e => ({ value: e.codigo, label: e.descripcion })));
-        setIndoleOpts(res.indoles.map(i => ({ value: i.codigo, label: i.descripcion })));
+    if (!needsListas) return;
+    const ctrl = new AbortController();
+    void (async () => {
+      setLoadingListas(true);
+      setApiError(null);
+      try {
+        const res = await segurosCaracasClient.getListasIniciales(ctrl.signal);
+        if (ctrl.signal.aborted) return;
+        if (res.ok && "estados" in res.data) {
+          setEstadoOpts(res.data.estados.map(e => ({ value: e.codigo, label: e.descripcion })));
+          setIndoleOpts(res.data.indoles.map(i => ({ value: i.codigo, label: i.descripcion })));
+        } else if (!res.ok && res.error !== "aborted") {
+          setApiError("No se pudieron cargar los listados de Seguros Caracas.");
+        }
+      } finally {
+        if (!ctrl.signal.aborted) setLoadingListas(false);
       }
-    });
-  }, [ramo]);
+    })().catch(() => {});
+    return () => ctrl.abort();
+  }, [needsListas, listasRetry]);
 
   useEffect(() => {
-    const cdEstado = hogarData.inmueble.cdEstado;
-    if (!cdEstado) { setCiudades([]); setSectores([]); return; }
-    setLoadingCiudades(true);
-    setCiudades([]);
-    setSectores([]);
-    setHogarData(p => ({ ...p, inmueble: { ...p.inmueble, cdCiudad: "", deCiudad: "", cdSector: "", deSector: "" } }));
-    segurosCaracasClient.getCiudades(cdEstado).then(res => {
-      if ("ciudades" in res) setCiudades(res.ciudades);
-    }).finally(() => setLoadingCiudades(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hogarData.inmueble.cdEstado]);
+    if (!cdEstado) return;
+    const ctrl = new AbortController();
+    void (async () => {
+      setLoadingCiudades(true);
+      setCiudades([]);
+      try {
+        const res = await segurosCaracasClient.getCiudades(cdEstado, ctrl.signal);
+        if (ctrl.signal.aborted) return;
+        if (res.ok && "ciudades" in res.data) setCiudades(res.data.ciudades);
+      } finally {
+        if (!ctrl.signal.aborted) setLoadingCiudades(false);
+      }
+    })().catch(() => {});
+    return () => ctrl.abort();
+  }, [cdEstado]);
 
   useEffect(() => {
-    const { cdEstado, cdCiudad } = hogarData.inmueble;
-    if (!cdEstado || !cdCiudad) { setSectores([]); return; }
-    setLoadingSectores(true);
-    setSectores([]);
-    setHogarData(p => ({ ...p, inmueble: { ...p.inmueble, cdSector: "", deSector: "" } }));
-    segurosCaracasClient.getSectores(cdEstado, cdCiudad).then(res => {
-      if ("sectores" in res) setSectores(res.sectores);
-    }).finally(() => setLoadingSectores(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hogarData.inmueble.cdCiudad]);
+    if (!cdEstado || !cdCiudad) return;
+    const ctrl = new AbortController();
+    void (async () => {
+      setLoadingSectores(true);
+      setSectores([]);
+      try {
+        const res = await segurosCaracasClient.getSectores(cdEstado, cdCiudad, ctrl.signal);
+        if (ctrl.signal.aborted) return;
+        if (res.ok && "sectores" in res.data) setSectores(res.data.sectores);
+      } finally {
+        if (!ctrl.signal.aborted) setLoadingSectores(false);
+      }
+    })().catch(() => {});
+    return () => ctrl.abort();
+  }, [cdEstado, cdCiudad]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
   const updE = (k: keyof EmpresaForm,     v: string) => setEmpresa(p        => ({ ...p, [k]: v }));
@@ -378,44 +439,99 @@ export default function CotizarPage() {
   const updS = (k: keyof SaludForm,       v: string) => setSaludData(p      => ({ ...p, [k]: v }));
   const updP = (k: keyof PatrimonialForm, v: string) => setPatrimonialData(p => ({ ...p, [k]: v }));
 
-  const updHI = (k: keyof HogarFormState["inmueble"], v: string) =>
-    setHogarData(p => ({ ...p, inmueble: { ...p.inmueble, [k]: v } }));
-
-  const updHA = (k: keyof SuscribirPersona, v: string) =>
-    setHogarData(p => ({ ...p, asegurado: { ...p.asegurado, [k]: v } }));
-
-  const updHT = (k: keyof SuscribirPersona, v: string) =>
-    setHogarData(p => ({ ...p, tomador: { ...p.tomador, [k]: v } }));
-
-  const handleEstadoChange = (cdEstado: string) => {
-    const deEstado = estadoOpts.find(o => o.value === cdEstado)?.label ?? "";
-    updHI("cdEstado", cdEstado);
-    updHI("deEstado", deEstado);
+  // Every hogar-form write is sanitised at the edge (strip non-digits, cap
+  // length, collapse whitespace) so state only ever holds clean values.
+  const updHI = (k: keyof HogarFormState["inmueble"], v: string) => {
+    const clean = sanitizeInmuebleField(k, v);
+    setHogarData(p => ({ ...p, inmueble: { ...p.inmueble, [k]: clean } }));
+    if (hogarErrors) setHogarErrors(e => e && { ...e, inmueble: { ...e.inmueble, [k]: undefined } });
   };
 
-  const handleCiudadChange = (cdCiudad: string) => {
-    const ciudad = ciudades.find(c => c.codigo === cdCiudad);
-    updHI("cdCiudad", cdCiudad);
-    updHI("deCiudad", ciudad?.descripcion ?? "");
-    updHI("cdPostal", ciudad?.cdPostal ?? "");
-    updHI("x", ciudad?.x ?? "");
-    updHI("y", ciudad?.y ?? "");
+  const updHA = (k: keyof PersonaFormState, v: string) => {
+    const clean = sanitizePersonaField(k, v);
+    setHogarData(p => ({ ...p, asegurado: { ...p.asegurado, [k]: clean } }));
+    if (hogarErrors) setHogarErrors(e => e && { ...e, asegurado: { ...e.asegurado, [k]: undefined } });
+  };
+
+  const updHT = (k: keyof PersonaFormState, v: string) => {
+    const clean = sanitizePersonaField(k, v);
+    setHogarData(p => ({ ...p, tomador: { ...p.tomador, [k]: clean } }));
+    if (hogarErrors) setHogarErrors(e => e && { ...e, tomador: { ...e.tomador, [k]: undefined } });
+  };
+
+  const clearInmuebleError = (k: keyof HogarFormState["inmueble"]) =>
+    setHogarErrors(e => e && { ...e, inmueble: { ...e.inmueble, [k]: undefined } });
+
+  const handleEstadoChange = (nextEstado: string) => {
+    const deEstado = estadoOpts.find(o => o.value === nextEstado)?.label ?? "";
+    // Reset every dependent field so no stale city/sector survives the change.
+    setHogarData(p => ({
+      ...p,
+      inmueble: {
+        ...p.inmueble,
+        cdEstado: nextEstado, deEstado,
+        cdCiudad: "", deCiudad: "", cdPostal: "", x: "", y: "",
+        cdSector: "", deSector: "",
+      },
+    }));
+    setSectores([]);
+    clearInmuebleError("cdEstado");
+  };
+
+  const handleCiudadChange = (nextCiudad: string) => {
+    const ciudad = ciudades.find(c => c.codigo === nextCiudad);
+    setHogarData(p => ({
+      ...p,
+      inmueble: {
+        ...p.inmueble,
+        cdCiudad: nextCiudad,
+        deCiudad: ciudad?.descripcion ?? "",
+        cdPostal: ciudad?.cdPostal ?? "",
+        x: ciudad?.x ?? "",
+        y: ciudad?.y ?? "",
+        cdSector: "", deSector: "",
+      },
+    }));
+    clearInmuebleError("cdCiudad");
   };
 
   const handleSectorChange = (cdSector: string) => {
     const sector = sectores.find(s => s.codigo === cdSector);
-    updHI("cdSector", cdSector);
-    updHI("deSector", sector?.descripcion ?? "");
+    setHogarData(p => ({
+      ...p,
+      inmueble: { ...p.inmueble, cdSector, deSector: sector?.descripcion ?? "" },
+    }));
+    clearInmuebleError("cdSector");
+  };
+
+  /** Validate the hogar form client-side. Returns true when safe to submit. */
+  const validateHogar = (): boolean => {
+    const errs: HogarErrors = {
+      inmueble: validateInmueble(hogarData.inmueble),
+      asegurado: validatePersona(hogarData.asegurado),
+      tomador: hogarData.tomadorIgualAsegurado ? {} : validatePersona(hogarData.tomador),
+    };
+    const bad = hasErrors(errs.inmueble) || hasErrors(errs.asegurado) || hasErrors(errs.tomador);
+    setHogarErrors(bad ? errs : null);
+    return !bad;
   };
 
   const handleCalcular = async () => {
     if (!CREDENTIALS_READY) return;
+    // Never query the API with an incomplete / malformed hogar form.
+    if (ramo === "hogar" && !validateHogar()) {
+      setApiError("Revisá los campos marcados antes de calcular.");
+      return;
+    }
     setLoading(true);
+    setApiError(null);
     try {
-      const res = await segurosCaracasClient.getPropuestas(SC_PRODUCTOR, SC_CONVENIO);
-      if ("propuestas" in res) setPropuestasApi(res.propuestas);
-    } catch {
-      // Fall through — show placeholder on API error
+      const res = await segurosCaracasClient.getPropuestas();
+      if (res.ok && "propuestas" in res.data) {
+        setPropuestasApi(res.data.propuestas);
+      } else {
+        setApiError("No se pudieron obtener las cotizaciones en este momento.");
+      }
     } finally {
       setLoading(false);
       setStep("results");
@@ -430,6 +546,8 @@ export default function CotizarPage() {
     setHogarData(HOGAR_INIT);
     setPatrimonialData({ tipoRiesgo: "", valorBienes: "", direccion: "", metros: "" });
     setPropuestasApi(null);
+    setApiError(null);
+    setHogarErrors(null);
     setCiudades([]); setSectores([]);
   };
 
@@ -467,7 +585,7 @@ export default function CotizarPage() {
         borderBottom: "1px solid rgba(58,19,53,0.09)",
         backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
       }}>
-        <a href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+        <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
           <div style={{
             backgroundColor: "white", borderRadius: 7, padding: "4px 9px",
             overflow: "hidden", flexShrink: 0,
@@ -480,7 +598,7 @@ export default function CotizarPage() {
               style={{ objectFit: "contain", display: "block" }}
             />
           </div>
-        </a>
+        </Link>
 
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
           <div style={{
@@ -695,20 +813,46 @@ export default function CotizarPage() {
                 {ramo === "hogar" && <>
                   <SectionTitle>Datos del inmueble</SectionTitle>
 
+                  {apiError && (
+                    <div style={{
+                      fontSize: 12, color: "#B45309", backgroundColor: "rgba(217,119,6,0.08)",
+                      border: "1px solid rgba(217,119,6,0.22)", borderRadius: 8,
+                      padding: "8px 12px", lineHeight: 1.5,
+                      display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+                    }}>
+                      <span>{apiError}</span>
+                      {!loadingListas && (
+                        <button
+                          type="button"
+                          onClick={() => { setEstadoOpts([]); setListasRetry(n => n + 1); }}
+                          style={{
+                            flexShrink: 0, fontSize: 11, fontWeight: 700, color: "#B45309",
+                            background: "transparent", border: "1px solid rgba(217,119,6,0.4)",
+                            borderRadius: 6, padding: "3px 10px", cursor: "pointer",
+                          }}
+                        >
+                          Reintentar
+                        </button>
+                      )}
+                    </div>
+                  )}
+
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                     <Select
                       label="Estado"
                       options={estadoOpts}
-                      hint={estadoOpts.length === 0 ? "Cargando desde Seguros Caracas…" : undefined}
-                      loading={estadoOpts.length === 0}
+                      hint={loadingListas ? "Cargando desde Seguros Caracas…" : undefined}
+                      loading={loadingListas}
+                      error={hogarErrors?.inmueble.cdEstado}
                       value={hogarData.inmueble.cdEstado}
                       onChange={handleEstadoChange}
                     />
                     <Select
                       label="Ciudad"
-                      options={ciudades.map(c => ({ value: c.codigo, label: c.descripcion }))}
+                      options={(cdEstado ? ciudades : []).map(c => ({ value: c.codigo, label: c.descripcion }))}
                       hint="Depende del estado seleccionado"
                       loading={loadingCiudades}
+                      error={hogarErrors?.inmueble.cdCiudad}
                       value={hogarData.inmueble.cdCiudad}
                       onChange={handleCiudadChange}
                     />
@@ -716,15 +860,17 @@ export default function CotizarPage() {
 
                   <Select
                     label="Sector / Urbanización"
-                    options={sectores.map(s => ({ value: s.codigo, label: s.descripcion }))}
+                    options={(cdCiudad ? sectores : []).map(s => ({ value: s.codigo, label: s.descripcion }))}
                     hint="Depende de la ciudad seleccionada"
                     loading={loadingSectores}
+                    error={hogarErrors?.inmueble.cdSector}
                     value={hogarData.inmueble.cdSector}
                     onChange={handleSectorChange}
                   />
 
                   <Select
                     label="Índole del inmueble"
+                    error={hogarErrors?.inmueble.cdIndole}
                     options={indoleOpts.length > 0 ? indoleOpts : [
                       { value: "1", label: "Apartamento Residencial" },
                       { value: "2", label: "Casa Residencial"        },
@@ -746,17 +892,20 @@ export default function CotizarPage() {
 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                     <Field label="Nombre del inmueble" placeholder="Ej: Torre B, Piso 4, Apto 4-C"
+                      error={hogarErrors?.inmueble.deInmueble}
                       value={hogarData.inmueble.deInmueble} onChange={v => updHI("deInmueble", v)} />
-                    <Field label="Calle / Avenida"
+                    <Field label="Calle / Avenida" error={hogarErrors?.inmueble.deCalle}
                       value={hogarData.inmueble.deCalle} onChange={v => updHI("deCalle", v)} />
                   </div>
                   <Field label="Dirección (línea 1)" hint="Máximo 50 caracteres"
+                    error={hogarErrors?.inmueble.deDireccion1} maxLength={50}
                     value={hogarData.inmueble.deDireccion1} onChange={v => updHI("deDireccion1", v)} />
                   <Field label="Dirección (línea 2)" hint="Opcional — máximo 50 caracteres"
+                    error={hogarErrors?.inmueble.deDireccion2} maxLength={50}
                     value={hogarData.inmueble.deDireccion2} onChange={v => updHI("deDireccion2", v)} />
 
                   <SectionTitle>Datos del asegurado</SectionTitle>
-                  <PersonaFields data={hogarData.asegurado} onChange={updHA} />
+                  <PersonaFields data={hogarData.asegurado} onChange={updHA} errors={hogarErrors?.asegurado} />
 
                   <SectionTitle>Datos del tomador</SectionTitle>
                   <CheckToggle
@@ -765,7 +914,7 @@ export default function CotizarPage() {
                     onChange={v => setHogarData(p => ({ ...p, tomadorIgualAsegurado: v }))}
                   />
                   {!hogarData.tomadorIgualAsegurado && (
-                    <PersonaFields data={hogarData.tomador} onChange={updHT} />
+                    <PersonaFields data={hogarData.tomador} onChange={updHT} errors={hogarErrors?.tomador} />
                   )}
                 </>}
 

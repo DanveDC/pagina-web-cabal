@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 // ─── SVG ICONS ────────────────────────────────────────────────────────────────
 
@@ -27,11 +28,6 @@ const CheckIcon = () => (
 const ShieldIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-  </svg>
-);
-const StarIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
   </svg>
 );
 const WhatsAppIcon = () => (
@@ -291,6 +287,7 @@ function PlanesSection() {
 // ─── PAGE PRINCIPAL ───────────────────────────────────────────────────────────
 
 export default function LandingPage() {
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [cotizadorTipo, setCotizadorTipo] = useState("empresa");
@@ -654,7 +651,7 @@ export default function LandingPage() {
             </div>
 
             <button
-              onClick={() => { window.location.href = "/cotizar"; }}
+              onClick={() => router.push("/cotizar")}
               style={{
                 width: "100%", background: "#3a1335",
                 color: "white", padding: "20px",
