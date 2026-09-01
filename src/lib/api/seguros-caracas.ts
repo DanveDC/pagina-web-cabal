@@ -32,7 +32,7 @@ function errResult(status: number, error: string): Err {
 
 async function request<T>(
   path: string,
-  init: RequestInit & { signal?: AbortSignal }
+  { base = BASE, ...init }: RequestInit & { signal?: AbortSignal; base?: string }
 ): Promise<Result<T>> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), CLIENT_TIMEOUT_MS);
@@ -43,7 +43,7 @@ async function request<T>(
   }
 
   try {
-    const res = await fetch(`${BASE}${path}`, {
+    const res = await fetch(`${base}${path}`, {
       ...init,
       signal: ctrl.signal,
       headers: { Accept: "application/json", ...init.headers },
@@ -112,12 +112,15 @@ export const segurosCaracasClient = {
     return request<PropuestasOk | ApiErrorResponse>("/propuestas", { method: "GET", signal });
   },
 
+  // Routed through /api/consultar-cliente, which injects the server-side bearer
+  // token the SC proxy requires for this PII lookup (the browser has no token).
   getCliente(nacionalidad: string, cedulaRif: string, signal?: AbortSignal) {
     const q = checkClienteQuery(nacionalidad, cedulaRif);
     if (!q.ok) return Promise.resolve(errResult(0, "invalid_request"));
-    return request<ClienteOk | ApiErrorResponse>(`/cliente${toQuery(q.params)}`, {
+    return request<ClienteOk | ApiErrorResponse>(`/consultar-cliente${toQuery(q.params)}`, {
       method: "GET",
       signal,
+      base: "/api",
     });
   },
 

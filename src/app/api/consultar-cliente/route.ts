@@ -1,7 +1,8 @@
-// ─── Internal route: Emitir póliza HOGAR ────────────────────────────────────
-// The browser calls this route. This route adds the SC_PROXY_TOKEN server-side
-// and forwards to /api/seguros-caracas/suscribir. The token never reaches the
-// browser.
+// ─── Internal route: consultar cliente (PII lookup) ────────────────────────
+// The browser calls this route. It injects SC_PROXY_TOKEN server-side and
+// forwards to /api/seguros-caracas/cliente. The token never reaches the
+// browser; the SC proxy still performs full Zod validation and credential
+// injection.
 
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, clientIp } from "@/lib/security/rate-limit";
@@ -11,22 +12,22 @@ import { isAllowedOrigin } from "@/lib/security/origin";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
   const token = process.env.SC_PROXY_TOKEN;
   if (!token) {
     return NextResponse.json({ error: "service_disabled" }, { status: 503 });
   }
 
-  // Browser-only entry point: a real Origin/Referer is required (anti-CSRF).
+  // Browser-only entry point: a real Origin/Referer is required.
   if (!isAllowedOrigin(req)) {
     return NextResponse.json({ error: "forbidden_origin" }, { status: 403 });
   }
 
   // Rate-limit here, at the real entry point: the downstream fetch to the SC
   // proxy is server-to-server and carries no client IP, so its limiter would
-  // otherwise bucket every emisión into one global key.
+  // otherwise bucket every lookup into one global key.
   const rl = rateLimit(
-    `POST:emitir-hogar:${clientIp(req)}`,
+    `GET:consultar-cliente:${clientIp(req)}`,
     rlConfig.sensitiveMax,
     rlConfig.windowMs
   );
@@ -44,26 +45,19 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: unknown;
-  try {
-    const text = await req.text();
-    if (text.length > 200_000) return NextResponse.json({ error: "payload_too_large" }, { status: 413 });
-    body = JSON.parse(text);
-  } catch {
-    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
-  }
-
   // Forward to our own SC proxy with the Bearer token injected server-side.
-  const origin = req.nextUrl.origin;
-  const res = await fetch(`${origin}/api/seguros-caracas/suscribir`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
-  });
+  const params = new URL(req.url).searchParams.toString();
+  const res = await fetch(
+    `${req.nextUrl.origin}/api/seguros-caracas/cliente${params ? `?${params}` : ""}`,
+    {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+    }
+  );
 
   const data = await res.json();
-  return NextResponse.json(data, { status: res.status });
+  return NextResponse.json(data, {
+    status: res.status,
+    headers: { "Cache-Control": "no-store" },
+  });
 }
