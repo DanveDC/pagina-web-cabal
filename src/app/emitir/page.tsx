@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { segurosCaracasClient } from "@/lib/api/seguros-caracas";
 import {
   buildSuscribirPayload,
@@ -24,7 +25,6 @@ import type {
   ClienteOk,
   Propuesta,
   FrecuenciaPago,
-  CatalogItem,
 } from "@/types/seguros-caracas";
 
 // ─── SVG Icons ───────────────────────────────────────────────────────────────
@@ -430,14 +430,12 @@ function StepInmueble({
 // ─── PersonaForm (shared for Asegurado + Tomador) ────────────────────────────
 
 function PersonaForm({
-  title, data, onChange, errors, indoles, paises,
+  title, data, onChange, errors,
 }: {
   title: string;
   data: PersonaFormState;
   onChange: (k: keyof PersonaFormState, v: string) => void;
   errors: Partial<Record<keyof PersonaFormState, string>>;
-  indoles?: CatalogItem[];
-  paises?: CatalogItem[];
 }) {
   const [lookingUp, setLookingUp] = useState(false);
   const [lookupError, setLookupError] = useState("");
@@ -631,6 +629,15 @@ function StepTomador({ asegurado, onNext, onBack }: { asegurado: PersonaFormStat
 
 // ─── Step 5: Confirmación y Emisión ─────────────────────────────────────────
 
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f5ebef" }}>
+      <span style={{ fontSize: "13px", color: "#7a6d74" }}>{label}</span>
+      <span style={{ fontSize: "13px", fontWeight: 600, color: "#1f1a1d" }}>{value}</span>
+    </div>
+  );
+}
+
 function StepConfirmar({
   plan, freq, inmueble, asegurado, tomador, tomadorIgual, onBack,
 }: {
@@ -699,13 +706,6 @@ function StepConfirmar({
       <button onClick={() => window.location.reload()} style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "11px 24px", borderRadius: "4px", fontSize: "14px", fontWeight: 600, backgroundColor: "#3A1335", color: "#fff", border: "none", cursor: "pointer" }}>
         Emitir otra póliza
       </button>
-    </div>
-  );
-
-  const SummaryRow = ({ label, value }: { label: string; value: string }) => (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #f5ebef" }}>
-      <span style={{ fontSize: "13px", color: "#7a6d74" }}>{label}</span>
-      <span style={{ fontSize: "13px", fontWeight: 600, color: "#1f1a1d" }}>{value}</span>
     </div>
   );
 
@@ -808,9 +808,9 @@ export default function EmitirPage() {
         <p style={{ fontSize: "14px", color: "#7a6d74", lineHeight: "1.6" }}>
           La integración con Seguros Caracas está pendiente de habilitación. Una vez que SC confirme el acceso, este módulo estará activo.
         </p>
-        <a href="/" style={{ display: "inline-block", marginTop: "24px", padding: "10px 24px", borderRadius: "4px", backgroundColor: "#3A1335", color: "#fff", fontSize: "14px", fontWeight: 600, textDecoration: "none" }}>
+        <Link href="/" style={{ display: "inline-block", marginTop: "24px", padding: "10px 24px", borderRadius: "4px", backgroundColor: "#3A1335", color: "#fff", fontSize: "14px", fontWeight: 600, textDecoration: "none" }}>
           Volver al inicio
-        </a>
+        </Link>
       </div>
     </div>
   );
@@ -819,9 +819,9 @@ export default function EmitirPage() {
     <div style={{ minHeight: "100dvh", backgroundColor: "#fff7f9" }}>
       {/* Nav */}
       <nav style={{ backgroundColor: "#3A1335", padding: "14px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <a href="/" style={{ textDecoration: "none", color: "#fff", fontWeight: 700, fontSize: "16px", fontFamily: "var(--font-display, Georgia, serif)" }}>
+        <Link href="/" style={{ textDecoration: "none", color: "#fff", fontWeight: 700, fontSize: "16px", fontFamily: "var(--font-display, Georgia, serif)" }}>
           Cabal Corretaje
-        </a>
+        </Link>
         <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.6)", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase" }}>
           Emisión · HOGAR · Seguros Caracas
         </span>
