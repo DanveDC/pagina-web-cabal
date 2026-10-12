@@ -737,7 +737,7 @@ export default function CotizarPage() {
               <div>
                 <BackBtn onClick={() => setStep(1)} />
                 <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.5px", color: "#3A1335", marginBottom: 4 }}>
-                  ¿Qué ramo deseas cotizar?
+                  ¿Qué ramo desea cotizar?
                 </h1>
                 <p style={{ fontSize: 13.5, color: "#4A464A" }}>
                   Seleccione el tipo de seguro para su empresa.
