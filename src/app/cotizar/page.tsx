@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { segurosCaracasClient } from "@/lib/api/seguros-caracas";
 import { EnvBanner } from "@/components/sc/env-banner";
+import { PendingActivation } from "@/components/sc/pending-activation";
 import { PERSONA_EMPTY } from "@/types/seguros-caracas";
 import type { HogarFormState, PersonaFormState, Propuesta, Ciudad, Sector } from "@/types/seguros-caracas";
 import {
@@ -51,20 +52,6 @@ const RAMOS: { id: Ramo; label: string; desc: string; color: string; icon: strin
 ];
 
 const STEPS = ["Empresa", "Ramo", "Detalles"];
-
-const OFERTAS_PLACEHOLDER: OfertaDisplay[] = [
-  {
-    nombre: "Seguros Caracas", siglas: "SC", color: "#3A1335",
-    prima_anual: 0, prima_mensual: 0, tag: "Pendiente", score: 94,
-    coberturas: [
-      { label: "Suma asegurada",          valor: "— pendiente de credenciales —" },
-      { label: "Deducible",               valor: "— pendiente de credenciales —" },
-      { label: "Red clínica",             valor: "— pendiente de credenciales —" },
-      { label: "Cobertura internacional", valor: "Incluida" },
-    ],
-    destacado: true,
-  },
-];
 
 const HOGAR_INIT: HogarFormState = {
   inmueble: {
@@ -572,7 +559,17 @@ export default function CotizarPage() {
         ],
         destacado: true,
       }))
-    : OFERTAS_PLACEHOLDER;
+    : [];
+
+  if (!CREDENTIALS_READY) return (
+    <div style={{ minHeight: "100dvh", backgroundColor: "#fff7f9", fontFamily: "var(--font-inter, var(--font-body, system-ui))" }}>
+      <EnvBanner />
+      <PendingActivation
+        title="Cotizador HOGAR — pendiente de activación"
+        description="Este módulo consume el servicio web Convenios HOGAR de Seguros Caracas y todavía no está activo. Estará disponible en cuanto Seguros Caracas habilite el acceso. Mientras tanto, no se muestran cotizaciones."
+      />
+    </div>
+  );
 
   return (
     <div style={{ minHeight: "100dvh", backgroundColor: "#fff7f9", fontFamily: "var(--font-inter, var(--font-body, system-ui))" }}>
@@ -1030,15 +1027,6 @@ export default function CotizarPage() {
                   </p>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  {!CREDENTIALS_READY && (
-                    <span style={{
-                      fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 99,
-                      backgroundColor: "rgba(217,119,6,0.10)", color: "#B45309",
-                      border: "1px solid rgba(217,119,6,0.22)",
-                    }}>
-                      ⚠ Datos de simulación
-                    </span>
-                  )}
                   <button
                     onClick={resetForm}
                     style={{
@@ -1180,12 +1168,6 @@ export default function CotizarPage() {
                 </motion.div>
               ))}
 
-              {!CREDENTIALS_READY && (
-                <p style={{ textAlign: "center", fontSize: 11.5, color: "#7A7A8A", paddingTop: 4, lineHeight: 1.6 }}>
-                  Los precios y coberturas son simulaciones de referencia.
-                  Los valores reales serán provistos por Seguros Caracas al activar las credenciales.
-                </p>
-              )}
             </motion.div>
           )}
 

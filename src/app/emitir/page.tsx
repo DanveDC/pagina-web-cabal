@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { segurosCaracasClient } from "@/lib/api/seguros-caracas";
 import { EnvBanner } from "@/components/sc/env-banner";
+import { PendingActivation } from "@/components/sc/pending-activation";
+import { SC_ENABLED } from "@/lib/sc-ambiente";
 import {
   buildSuscribirPayload,
   validatePersona,
@@ -797,22 +799,20 @@ export default function EmitirPage() {
   const [tomador, setTomador] = useState<PersonaFormState | null>(null);
   const [tomadorIgual, setTomadorIgual] = useState(true);
 
-  const enabled = process.env.NEXT_PUBLIC_SC_ENABLED === "true";
-
-  if (!enabled) return (
-    <div style={{ minHeight: "100dvh", backgroundColor: "#fff7f9", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ maxWidth: "440px", textAlign: "center", padding: "40px 24px" }}>
-        <div style={{ color: "#3A1335", marginBottom: "16px" }}><ShieldIcon /></div>
-        <h1 style={{ fontFamily: "var(--font-display, Georgia, serif)", fontSize: "24px", fontWeight: 700, color: "#3A1335", marginBottom: "12px" }}>
-          Módulo de emisión no disponible
-        </h1>
-        <p style={{ fontSize: "14px", color: "#7a6d74", lineHeight: "1.6" }}>
-          La integración con Seguros Caracas está pendiente de habilitación. Una vez que SC confirme el acceso, este módulo estará activo.
-        </p>
-        <Link href="/" style={{ display: "inline-block", marginTop: "24px", padding: "10px 24px", borderRadius: "4px", backgroundColor: "#3A1335", color: "#fff", fontSize: "14px", fontWeight: 600, textDecoration: "none" }}>
-          Volver al inicio
-        </Link>
-      </div>
+  if (!SC_ENABLED) return (
+    <div style={{ minHeight: "100dvh", backgroundColor: "#fff7f9" }}>
+      <EnvBanner />
+      <PendingActivation
+        title="Módulo de emisión HOGAR — pendiente de activación"
+        description="Este módulo consume el servicio web Convenios HOGAR de Seguros Caracas. Se activará en cuanto se reciban el código de productor (cdProductor), el código de convenio (cdConvenio) y la autorización de las IP de egreso de Cabal."
+        flow={[
+          "Plan (consultarPropuestas)",
+          "Inmueble (consultarListasIniciales / consultarCiudades / consultarSectores)",
+          "Asegurado (consultarCliente)",
+          "Tomador",
+          "Confirmar (suscribir)",
+        ]}
+      />
     </div>
   );
 
