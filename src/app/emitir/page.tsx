@@ -5,7 +5,14 @@ import Link from "next/link";
 import { segurosCaracasClient } from "@/lib/api/seguros-caracas";
 import { EnvBanner } from "@/components/sc/env-banner";
 import { PendingActivation } from "@/components/sc/pending-activation";
-import { SC_ENABLED } from "@/lib/sc-ambiente";
+import { SC_ENABLED, SC_AMBIENTE } from "@/lib/sc-ambiente";
+import {
+  classifyEmitirResult,
+  describeScError,
+  formatCaracasDateTime,
+  formatPolizaText,
+  type Poliza,
+} from "@/lib/api/emitir-result";
 import {
   buildSuscribirPayload,
   validatePersona,
@@ -208,7 +215,7 @@ function StepPlan({
     segurosCaracasClient.getPropuestas()
       .then((r) => {
         if (r.ok && "propuestas" in r.data) setPropuestas((r.data as PropuestasOk).propuestas);
-        else setError("No se pudieron cargar los planes. Verifique la conexión con Seguros Caracas.");
+        else setError(r.ok ? describeScError("upstream_bad_response") : describeScError(r.error));
       })
       .catch(() => setError("Error al conectar con Seguros Caracas."))
       .finally(() => setLoading(false));
@@ -654,7 +661,10 @@ function StepConfirmar({
 }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [poliza, setPoliza] = useState<{ cdRamo: number; cdSucursal: number; nuPoliza: number; nuRecibo: number } | null>(null);
+  const [poliza, setPoliza] = useState<Poliza | null>(null);
+  const [emittedAt, setEmittedAt] = useState<Date | null>(null);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const [manualCopyText, setManualCopyText] = useState("");
 
   const emitir = async () => {
     setError(""); setSubmitting(true);
@@ -672,16 +682,55 @@ function StepConfirmar({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(result.payload),
       });
-      const data = await res.json();
-      if (data.cdError === 0 && data.poliza) {
-        setPoliza(data.poliza);
+      let data: unknown;
+      try {
+        data = JSON.parse(await res.text());
+      } catch {
+        data = undefined;
+      }
+      // Success only when the response is OK AND the classifier confirms it.
+      const outcome = classifyEmitirResult(res.status, data);
+      if (res.ok && outcome.ok) {
+        setEmittedAt(new Date());
+        setPoliza(outcome.poliza);
+      } else if (!outcome.ok) {
+        setError(outcome.deError || describeScError(outcome.code));
       } else {
-        setError(data.deError ?? data.error ?? "Error al emitir la póliza. Verifique los datos.");
+        setError(describeScError("invalid_response"));
       }
     } catch {
       setError("Error de conexión al emitir la póliza.");
     }
     setSubmitting(false);
+  };
+
+  const copiar = async () => {
+    if (!poliza || !emittedAt) return;
+    const text = formatPolizaText(poliza, emittedAt, SC_AMBIENTE);
+    setManualCopyText("");
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        setCopyState("copied");
+        return;
+      }
+      throw new Error("clipboard_unavailable");
+    } catch {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        if (ok) { setCopyState("copied"); return; }
+      } catch { /* fall through to manual copy */ }
+      setManualCopyText(text);
+      setCopyState("failed");
+    }
   };
 
   if (poliza) return (
@@ -706,6 +755,34 @@ function StepConfirmar({
         ))}
       </div>
 
+      {emittedAt && (() => {
+        const { date, time } = formatCaracasDateTime(emittedAt);
+        return (
+          <p style={{ fontSize: "13px", color: "#7a6d74", marginBottom: "20px" }}>
+            Fecha y hora de registro: {date} {time} (hora de Caracas)
+          </p>
+        );
+      })()}
+
+      <div style={{ marginBottom: "24px" }}>
+        <button onClick={copiar} style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "10px 20px", borderRadius: "4px", fontSize: "14px", fontWeight: 600, backgroundColor: "transparent", color: "#3A1335", border: "1.5px solid #3A1335", cursor: "pointer" }}>
+          Copiar datos de la póliza
+        </button>
+        <div role="status" aria-live="polite" style={{ fontSize: "13px", marginTop: "8px", color: copyState === "failed" ? "#DC2626" : "#059669" }}>
+          {copyState === "copied" && "Datos copiados al portapapeles."}
+          {copyState === "failed" && "No se pudo copiar automáticamente. Seleccione y copie el texto manualmente."}
+        </div>
+        {manualCopyText && (
+          <textarea
+            readOnly
+            value={manualCopyText}
+            rows={8}
+            onFocus={(e) => e.currentTarget.select()}
+            style={{ width: "100%", maxWidth: "420px", marginTop: "8px", fontSize: "13px", padding: "10px", border: "1px solid #d2c2cb", borderRadius: "6px" }}
+          />
+        )}
+      </div>
+
       <button onClick={() => window.location.reload()} style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "11px 24px", borderRadius: "4px", fontSize: "14px", fontWeight: 600, backgroundColor: "#3A1335", color: "#fff", border: "none", cursor: "pointer" }}>
         Emitir otra póliza
       </button>
@@ -718,7 +795,11 @@ function StepConfirmar({
         <ShieldIcon />
         <h2 style={{ fontFamily: "var(--font-display, Georgia, serif)", fontSize: "22px", fontWeight: 700, color: "#3A1335" }}>Confirme y emita</h2>
       </div>
-      <p style={{ fontSize: "14px", color: "#7a6d74", marginBottom: "28px" }}>Revise los datos antes de emitir. Esta acción generará una póliza real en Seguros Caracas.</p>
+      <p style={{ fontSize: "14px", color: "#7a6d74", marginBottom: "28px" }}>
+        {SC_AMBIENTE === "pruebas"
+          ? "Se emitirá una póliza en el ambiente de PRUEBAS de Seguros Caracas."
+          : "Revise los datos antes de emitir. Esta acción generará una póliza real en Seguros Caracas."}
+      </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "28px" }}>
         {/* Plan */}
@@ -766,9 +847,11 @@ function StepConfirmar({
         </div>
       )}
 
-      <div style={{ padding: "14px 18px", backgroundColor: "#fffbeb", border: "1px solid #fde68a", borderRadius: "6px", fontSize: "13px", color: "#92400e", marginBottom: "24px" }}>
-        ⚠ Al confirmar se emitirá una <strong>póliza real</strong> en Seguros Caracas. Esta acción no se puede deshacer.
-      </div>
+      {SC_AMBIENTE !== "pruebas" && (
+        <div style={{ padding: "14px 18px", backgroundColor: "#fffbeb", border: "1px solid #fde68a", borderRadius: "6px", fontSize: "13px", color: "#92400e", marginBottom: "24px" }}>
+          ⚠ Al confirmar se emitirá una <strong>póliza real</strong> en Seguros Caracas. Esta acción no se puede deshacer.
+        </div>
+      )}
 
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <button onClick={onBack} disabled={submitting} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "11px 20px", borderRadius: "4px", fontSize: "14px", fontWeight: 600, backgroundColor: "transparent", color: "#3A1335", border: "1.5px solid #3A1335", cursor: "pointer" }}>
