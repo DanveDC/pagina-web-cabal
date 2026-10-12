@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { segurosCaracasClient } from "@/lib/api/seguros-caracas";
+import { EnvBanner } from "@/components/sc/env-banner";
 import {
   buildSuscribirPayload,
   validatePersona,
@@ -817,6 +818,7 @@ export default function EmitirPage() {
 
   return (
     <div style={{ minHeight: "100dvh", backgroundColor: "#fff7f9" }}>
+      <EnvBanner />
       {/* Nav */}
       <nav style={{ backgroundColor: "#3A1335", padding: "14px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Link href="/" style={{ textDecoration: "none", color: "#fff", fontWeight: 700, fontSize: "16px", fontFamily: "var(--font-display, Georgia, serif)" }}>

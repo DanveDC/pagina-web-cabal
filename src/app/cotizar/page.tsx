@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { segurosCaracasClient } from "@/lib/api/seguros-caracas";
+import { EnvBanner } from "@/components/sc/env-banner";
 import { PERSONA_EMPTY } from "@/types/seguros-caracas";
 import type { HogarFormState, PersonaFormState, Propuesta, Ciudad, Sector } from "@/types/seguros-caracas";
 import {
@@ -577,8 +578,9 @@ export default function CotizarPage() {
     <div style={{ minHeight: "100dvh", backgroundColor: "#fff7f9", fontFamily: "var(--font-inter, var(--font-body, system-ui))" }}>
 
       {/* ── HEADER ── */}
+      <div style={{ position: "sticky", top: 0, zIndex: 50 }}>
+      <EnvBanner />
       <header style={{
-        position: "sticky", top: 0, zIndex: 50,
         height: 56, display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "0 24px",
         backgroundColor: "rgba(255,255,255,0.92)",
@@ -611,6 +613,7 @@ export default function CotizarPage() {
           </span>
         </div>
       </header>
+      </div>
 
       {/* ── CONTENIDO ── */}
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "40px 24px 80px" }}>

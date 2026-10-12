@@ -18,6 +18,7 @@ The app ships as a **standalone Next.js server** in a hardened container
    | Key | Example | Notes |
    | --- | --- | --- |
    | `NEXT_PUBLIC_SC_ENABLED` | `false` → `true` when live | build-time, public |
+   | `NEXT_PUBLIC_SC_AMBIENTE` | `pruebas` (default) → `produccion` when live | build-time, public; `pruebas` shows the test-environment banner |
    | `SC_PROXY_ENABLED` | `false` → `true` when live | run-time kill-switch |
    | `SC_BASE_URL` | `https://sasweb-test.seguroscaracas.com` | test vs prod host |
    | `SC_PRODUCTOR` | *(from Seguros Caracas)* | secret |
@@ -31,7 +32,9 @@ The app ships as a **standalone Next.js server** in a hardened container
    `X-Forwarded-For` — the rate limiter and origin check use it.
 
 `NEXT_PUBLIC_SC_ENABLED` is compiled into the client bundle, so changing it
-requires a **rebuild** (redeploy), not just a restart.
+requires a **rebuild** (redeploy), not just a restart. The same applies to
+`NEXT_PUBLIC_SC_AMBIENTE`; any value other than `produccion` is treated as
+`pruebas`.
 
 ## Option B — Droplet + Docker
 

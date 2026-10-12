@@ -52,6 +52,10 @@ services:
       - key: NEXT_PUBLIC_SC_ENABLED
         scope: BUILD_TIME
         value: "false"
+      # "pruebas" (default, shows test banner) or "produccion". Build-time.
+      - key: NEXT_PUBLIC_SC_AMBIENTE
+        scope: BUILD_TIME
+        value: "pruebas"
 
       # ── Set these in the dashboard before enabling the proxy ──
       # SC_BASE_URL is intentionally NOT defaulted here: with the proxy enabled

@@ -17,6 +17,8 @@ COPY . .
 # NEXT_PUBLIC_* values are inlined at build time; provide non-secret defaults.
 ARG NEXT_PUBLIC_SC_ENABLED=false
 ENV NEXT_PUBLIC_SC_ENABLED=$NEXT_PUBLIC_SC_ENABLED
+ARG NEXT_PUBLIC_SC_AMBIENTE=pruebas
+ENV NEXT_PUBLIC_SC_AMBIENTE=$NEXT_PUBLIC_SC_AMBIENTE
 RUN npm run build
 
 # ─── Stage 3: runtime ────────────────────────────────────────────────────
