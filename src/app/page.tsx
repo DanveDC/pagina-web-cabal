@@ -59,7 +59,7 @@ function useInView(margin = "-60px") {
 const PLANES = [
   {
     nombre: "Cobertura Básica",
-    precio: "Desde $XX/mes",
+    precio: "Cotización a medida",
     destacado: false,
     beneficios: [
       "Seguro de salud HCM básico",
@@ -70,7 +70,7 @@ const PLANES = [
   },
   {
     nombre: "Protección Vital",
-    precio: "Desde $XX/mes",
+    precio: "Cotización a medida",
     destacado: true,
     tag: "Más elegido",
     beneficios: [
@@ -83,7 +83,7 @@ const PLANES = [
   },
   {
     nombre: "Previsión Elite",
-    precio: "Desde $XX/mes",
+    precio: "Cotización a medida",
     destacado: false,
     beneficios: [
       "HCM premium + internacional",
@@ -96,7 +96,7 @@ const PLANES = [
   },
   {
     nombre: "Global Shield",
-    precio: "A medida",
+    precio: "Cotización a medida",
     destacado: false,
     beneficios: [
       "Cobertura internacional",
@@ -985,10 +985,10 @@ export default function LandingPage() {
                       textTransform: "uppercase", letterSpacing: "0.2em",
                       color: "rgba(255,255,255,0.50)", marginBottom: "4px",
                     }}>Teléfono</div>
-                    <a href="tel:+582125550100" style={{
+                    <a href="tel:[TELÉFONO REAL]" style={{
                       color: "white", textDecoration: "none",
                       fontSize: "24px", fontWeight: 700,
-                    }}>+58 (212) 555-0100</a>
+                    }}>[TELÉFONO REAL]</a>
                   </div>
                 </div>
 
@@ -1235,7 +1235,7 @@ export default function LandingPage() {
             textTransform: "uppercase", letterSpacing: "0.2em",
             color: "rgba(255,255,255,0.40)",
           }}>
-            <span>© 2024 CABAL CORRETAJE DE SEGUROS. TODOS LOS DERECHOS RESERVADOS.</span>
+            <span>© {new Date().getFullYear()} CABAL CORRETAJE DE SEGUROS. TODOS LOS DERECHOS RESERVADOS.</span>
             <span>RIF: J-405144750 | SUDEASEG: SCSMP-000002</span>
           </div>
         </div>
