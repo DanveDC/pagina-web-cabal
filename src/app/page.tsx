@@ -184,7 +184,7 @@ function PlanesSection() {
             Cuadro Comparativo de Planes
           </h2>
           <p style={{ fontSize: "16px", color: "#4e444b", marginTop: "12px", maxWidth: "480px", margin: "12px auto 0", lineHeight: 1.6 }}>
-            Encontrá la cobertura que se adapta a las necesidades de tu empresa.
+            Encuentre la cobertura que se adapta a las necesidades de su empresa.
           </p>
         </div>
 
@@ -544,7 +544,7 @@ export default function LandingPage() {
               fontWeight: 700, lineHeight: 1.1,
               color: "white", marginBottom: "32px",
             }}>
-              La tranquilidad de saber que tu futuro está protegido por manos expertas.
+              La tranquilidad de saber que su futuro está protegido por manos expertas.
             </h1>
 
             <p style={{
@@ -761,7 +761,7 @@ export default function LandingPage() {
                 onMouseEnter={e => (e.currentTarget.style.gap = "16px")}
                 onMouseLeave={e => (e.currentTarget.style.gap = "12px")}
               >
-                Conoce más sobre nuestro equipo →
+                Conozca más sobre nuestro equipo →
               </a>
             </div>
 

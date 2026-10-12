@@ -119,21 +119,21 @@ export function validatePersona(p: PersonaFormState): FieldErrors<PersonaField> 
   const e: FieldErrors<PersonaField> = {};
   const juridica = p.nacionalidad === "J" || p.nacionalidad === "G";
 
-  if (!["V", "E", "J", "G"].includes(p.nacionalidad)) e.nacionalidad = "Seleccioná la nacionalidad";
+  if (!["V", "E", "J", "G"].includes(p.nacionalidad)) e.nacionalidad = "Seleccione la nacionalidad";
 
   if (onlyDigits(p.cedulaRif, 12).length < 4)
-    e.cedulaRif = "Ingresá la cédula o RIF (solo números, 4 a 12 dígitos)";
+    e.cedulaRif = "Ingrese la cédula o RIF (solo números, 4 a 12 dígitos)";
 
   if (!juridica && !cleanText(p.nombres, 120)) e.nombres = "Requerido";
   if (!cleanText(p.apellidosRazonSocial, 120)) e.apellidosRazonSocial = "Requerido";
 
   if (!juridica) {
-    if (!["M", "F"].includes(p.sexo)) e.sexo = "Seleccioná el sexo";
-    if (!p.edoCivil) e.edoCivil = "Seleccioná el estado civil";
+    if (!["M", "F"].includes(p.sexo)) e.sexo = "Seleccione el sexo";
+    if (!p.edoCivil) e.edoCivil = "Seleccione el estado civil";
     if (!p.feNacimiento) e.feNacimiento = "Requerida (DD/MM/YYYY)";
-    else if (!isValidDateDMY(p.feNacimiento)) e.feNacimiento = "Fecha inválida — usá DD/MM/YYYY";
+    else if (!isValidDateDMY(p.feNacimiento)) e.feNacimiento = "Fecha inválida — use DD/MM/YYYY";
   } else if (p.feNacimiento && !isValidDateDMY(p.feNacimiento)) {
-    e.feNacimiento = "Fecha inválida — usá DD/MM/YYYY";
+    e.feNacimiento = "Fecha inválida — use DD/MM/YYYY";
   }
 
   if (!p.email) e.email = "Requerido";
@@ -149,10 +149,10 @@ export function validatePersona(p: PersonaFormState): FieldErrors<PersonaField> 
 
 export function validateInmueble(i: HogarFormState["inmueble"]): FieldErrors<InmuebleField> {
   const e: FieldErrors<InmuebleField> = {};
-  if (!i.cdEstado) e.cdEstado = "Seleccioná el estado";
-  if (!i.cdCiudad) e.cdCiudad = "Seleccioná la ciudad";
-  if (!i.cdSector) e.cdSector = "Seleccioná el sector";
-  if (!i.cdIndole) e.cdIndole = "Seleccioná la índole del inmueble";
+  if (!i.cdEstado) e.cdEstado = "Seleccione el estado";
+  if (!i.cdCiudad) e.cdCiudad = "Seleccione la ciudad";
+  if (!i.cdSector) e.cdSector = "Seleccione el sector";
+  if (!i.cdIndole) e.cdIndole = "Seleccione la índole del inmueble";
   if (!cleanText(i.deInmueble, 120)) e.deInmueble = "Requerido";
   if (!cleanText(i.deCalle, 120)) e.deCalle = "Requerida";
   // deDireccion1/2 are clamped to 50 chars at input time (sanitizeInmuebleField).
@@ -226,7 +226,7 @@ export function buildSuscribirPayload(
   if (!suscribirBody.safeParse(payload).success) {
     return {
       ok: false,
-      errors: { ...errors, form: "Revisá los datos: hay campos con formato inválido." },
+      errors: { ...errors, form: "Revise los datos: hay campos con formato inválido." },
     };
   }
   return { ok: true, payload };

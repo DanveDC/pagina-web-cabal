@@ -31,13 +31,13 @@ const variantConfig: Record<
     icon: ServerCrash,
     color: "var(--error)",
     defaultTitle: "Servidor local no disponible",
-    defaultDesc: "No se pudo conectar con el servidor de la oficina. Verifica la conexión de red.",
+    defaultDesc: "No se pudo conectar con el servidor de la oficina. Verifique la conexión de red.",
   },
   network: {
     icon: WifiOff,
     color: "var(--error)",
     defaultTitle: "Sin conexión a internet",
-    defaultDesc: "Revisa tu conexión e intenta de nuevo.",
+    defaultDesc: "Revise su conexión e intente de nuevo.",
   },
   generic: {
     icon: AlertTriangle,

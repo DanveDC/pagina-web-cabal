@@ -47,7 +47,7 @@ interface OfertaDisplay {
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
 const RAMOS: { id: Ramo; label: string; desc: string; color: string; icon: string }[] = [
   { id: "automovil",     label: "Automóvil",    desc: "Flota vehicular e individuales",  color: "#5B3AF5", icon: "🚗" },
-  { id: "salud",         label: "Salud",         desc: "HCM colectivo para tu equipo",    color: "#059669", icon: "❤️" },
+  { id: "salud",         label: "Salud",         desc: "HCM colectivo para su equipo",    color: "#059669", icon: "❤️" },
   { id: "hogar",         label: "Hogar",         desc: "Residenciales y comerciales",     color: "#D97706", icon: "🏠" },
   { id: "patrimoniales", label: "Patrimoniales", desc: "Bienes y responsabilidad civil",  color: "#0284C7", icon: "🏢" },
 ];
@@ -712,7 +712,7 @@ export default function CotizarPage() {
                     { value: "educacion",    label: "Educación"    },
                     { value: "otro",         label: "Otro"         },
                   ]}
-                  hint="Clasifica el giro principal de tu empresa"
+                  hint="Clasifique el giro principal de su empresa"
                   value={empresa.sector} onChange={v => updE("sector", v)}
                 />
                 <Field label="Facturación anual estimada" type="number" suffix="USD"
@@ -740,7 +740,7 @@ export default function CotizarPage() {
                   ¿Qué ramo deseas cotizar?
                 </h1>
                 <p style={{ fontSize: 13.5, color: "#4A464A" }}>
-                  Seleccioná el tipo de seguro para tu empresa.
+                  Seleccione el tipo de seguro para su empresa.
                 </p>
               </div>
 
@@ -794,7 +794,7 @@ export default function CotizarPage() {
                   Detalles del riesgo
                 </h1>
                 <p style={{ fontSize: 13.5, color: "#4A464A" }}>
-                  Completá la información específica para calcular las mejores tarifas.
+                  Complete la información específica para calcular las mejores tarifas.
                 </p>
               </div>
 
@@ -821,7 +821,7 @@ export default function CotizarPage() {
                     value={autoData.uso} onChange={v => updA("uso", v)}
                   />
                   <Field label="N° de vehículos (si es flota)" type="number"
-                    hint="Dejá en blanco si es un solo vehículo"
+                    hint="Deje en blanco si es un solo vehículo"
                     value={autoData.nVehiculos} onChange={v => updA("nVehiculos", v)} />
                 </>}
 
