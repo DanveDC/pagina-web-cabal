@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { segurosCaracasClient } from "@/lib/api/seguros-caracas";
 import { EnvBanner } from "@/components/sc/env-banner";
+import { describeScError } from "@/lib/api/emitir-result";
 import { PendingActivation } from "@/components/sc/pending-activation";
 import { PERSONA_EMPTY } from "@/types/seguros-caracas";
 import type { HogarFormState, PersonaFormState, Propuesta, Ciudad, Sector } from "@/types/seguros-caracas";
@@ -343,6 +344,7 @@ export default function CotizarPage() {
   const [loadingCiudades, setLoadingCiudades] = useState(false);
   const [loadingSectores, setLoadingSectores] = useState(false);
   const [apiError,        setApiError]        = useState<string | null>(null);
+  const [calcError,       setCalcError]       = useState<string | null>(null);
 
   // ── Client-side validation state (hogar) ─────────────────────────────────
   type HogarErrors = {
@@ -526,23 +528,32 @@ export default function CotizarPage() {
 
   const handleCalcular = async () => {
     if (!CREDENTIALS_READY) return;
+    setCalcError(null);
     // Never query the API with an incomplete / malformed hogar form.
     if (ramo === "hogar" && !validateHogar()) {
-      setApiError("Revisá los campos marcados antes de calcular.");
+      setCalcError("Revise los campos marcados antes de calcular.");
       return;
     }
     setLoading(true);
-    setApiError(null);
     try {
       const res = await segurosCaracasClient.getPropuestas();
-      if (res.ok && "propuestas" in res.data) {
+      if (res.ok && "propuestas" in res.data && res.data.propuestas.length > 0) {
         setPropuestasApi(res.data.propuestas);
+        setStep("results");
       } else {
-        setApiError("No se pudieron obtener las cotizaciones en este momento.");
+        // Stay on the form: never show a placeholder quote as if it were real.
+        setPropuestasApi(null);
+        setCalcError(
+          res.ok
+            ? "Seguros Caracas no devolvió cotizaciones para esta solicitud. Revise los datos e intente nuevamente."
+            : describeScError(res.error)
+        );
       }
+    } catch {
+      setPropuestasApi(null);
+      setCalcError(describeScError("network_error"));
     } finally {
       setLoading(false);
-      setStep("results");
     }
   };
 
@@ -555,6 +566,7 @@ export default function CotizarPage() {
     setPatrimonialData({ tipoRiesgo: "", valorBienes: "", direccion: "", metros: "" });
     setPropuestasApi(null);
     setApiError(null);
+    setCalcError(null);
     setHogarErrors(null);
     setCiudades([]); setSectores([]);
   };
@@ -957,6 +969,14 @@ export default function CotizarPage() {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {calcError && (
+                  <div role="alert" style={{
+                    fontSize: 12.5, color: "#DC2626", backgroundColor: "#fef2f2",
+                    border: "1px solid #fecaca", borderRadius: 8, padding: "10px 12px", lineHeight: 1.5,
+                  }}>
+                    {calcError}
+                  </div>
+                )}
                 <PrimaryBtn onClick={handleCalcular} disabled={!CREDENTIALS_READY}>
                   {CREDENTIALS_READY ? "✦ Calcular cotizaciones" : "⏸ Pendiente de credenciales"}
                 </PrimaryBtn>
