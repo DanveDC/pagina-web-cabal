@@ -329,12 +329,29 @@ function StepInmueble({
   const [form, setForm] = useState<HogarFormState["inmueble"]>(INMUEBLE_EMPTY);
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [loadingListas, setLoadingListas] = useState(true);
+  const [catalogError, setCatalogError] = useState("");
+  const [retry, setRetry] = useState<null | (() => void)>(null);
+  const [listasAttempt, setListasAttempt] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
     segurosCaracasClient.getListasIniciales().then((r) => {
-      if (r.ok && "estados" in r.data) setListas(r.data as ListasInicialesOk);
+      if (cancelled) return;
+      if (r.ok && "estados" in r.data) {
+        setListas(r.data as ListasInicialesOk);
+      } else {
+        setCatalogError(r.ok ? describeScError("upstream_bad_response") : describeScError(r.error));
+        setRetry(() => () => {
+          setLoadingListas(true);
+          setCatalogError("");
+          setListasAttempt((n) => n + 1);
+        });
+      }
+      setLoadingListas(false);
     });
-  }, []);
+    return () => { cancelled = true; };
+  }, [listasAttempt]);
 
   const handleEstado = useCallback(async (cdEstado: string) => {
     const found = listas?.estados.find((e) => e.codigo === cdEstado);
@@ -342,8 +359,14 @@ function StepInmueble({
     setCiudades([]); setSectores([]);
     if (!cdEstado) return;
     setLoadingCiudades(true);
+    setCatalogError("");
     const r = await segurosCaracasClient.getCiudades(cdEstado);
-    if (r.ok && "ciudades" in r.data) setCiudades((r.data as CiudadesOk).ciudades);
+    if (r.ok && "ciudades" in r.data) {
+      setCiudades((r.data as CiudadesOk).ciudades);
+    } else {
+      setCatalogError("No se pudieron cargar las ciudades. " + (r.ok ? describeScError("upstream_bad_response") : describeScError(r.error)));
+      setRetry(() => () => { void handleEstado(cdEstado); });
+    }
     setLoadingCiudades(false);
   }, [listas]);
 
@@ -353,8 +376,14 @@ function StepInmueble({
     setSectores([]);
     if (!cdCiudad || !form.cdEstado) return;
     setLoadingSectores(true);
+    setCatalogError("");
     const r = await segurosCaracasClient.getSectores(form.cdEstado, cdCiudad);
-    if (r.ok && "sectores" in r.data) setSectores((r.data as SectoresOk).sectores);
+    if (r.ok && "sectores" in r.data) {
+      setSectores((r.data as SectoresOk).sectores);
+    } else {
+      setCatalogError("No se pudieron cargar los sectores. " + (r.ok ? describeScError("upstream_bad_response") : describeScError(r.error)));
+      setRetry(() => () => { void handleCiudad(cdCiudad); });
+    }
     setLoadingSectores(false);
   }, [ciudades, form.cdEstado]);
 
@@ -388,6 +417,20 @@ function StepInmueble({
         <h2 style={{ fontFamily: "var(--font-display, Georgia, serif)", fontSize: "22px", fontWeight: 700, color: "#3A1335" }}>Datos del inmueble</h2>
       </div>
       <p style={{ fontSize: "14px", color: "#7a6d74", marginBottom: "28px" }}>Ubicación y características del bien a asegurar.</p>
+
+      {loadingListas && (
+        <p style={{ fontSize: "13px", color: "#7a6d74", marginBottom: "16px" }}>Cargando listados de Seguros Caracas…</p>
+      )}
+      {catalogError && (
+        <div role="alert" style={{ padding: "14px 18px", backgroundColor: "#fef2f2", border: "1px solid #fecaca", borderRadius: "6px", color: "#DC2626", fontSize: "14px", marginBottom: "20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+          <span>{catalogError.startsWith("No se pudieron") ? catalogError : "No se pudieron cargar los listados. " + catalogError}</span>
+          {retry && (
+            <button onClick={() => retry()} style={{ padding: "6px 14px", borderRadius: "4px", fontSize: "13px", fontWeight: 600, backgroundColor: "transparent", color: "#DC2626", border: "1.5px solid #DC2626", cursor: "pointer" }}>
+              Reintentar
+            </button>
+          )}
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
         <Field label="Estado" error={errors.cdEstado} required>

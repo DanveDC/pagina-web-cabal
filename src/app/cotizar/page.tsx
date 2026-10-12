@@ -363,6 +363,9 @@ export default function CotizarPage() {
   const cdEstado = hogarData.inmueble.cdEstado;
   const cdCiudad = hogarData.inmueble.cdCiudad;
   const [listasRetry, setListasRetry] = useState(0);
+  const [ciudadesRetry, setCiudadesRetry] = useState(0);
+  const [sectoresRetry, setSectoresRetry] = useState(0);
+  const [retryKind, setRetryKind] = useState<"listas" | "ciudades" | "sectores">("listas");
   const needsListas = ramo === "hogar" && estadoOpts.length === 0;
 
   useEffect(() => {
@@ -378,6 +381,7 @@ export default function CotizarPage() {
           setEstadoOpts(res.data.estados.map(e => ({ value: e.codigo, label: e.descripcion })));
           setIndoleOpts(res.data.indoles.map(i => ({ value: i.codigo, label: i.descripcion })));
         } else if (!res.ok && res.error !== "aborted") {
+          setRetryKind("listas");
           setApiError("No se pudieron cargar los listados de Seguros Caracas.");
         }
       } finally {
@@ -396,13 +400,20 @@ export default function CotizarPage() {
       try {
         const res = await segurosCaracasClient.getCiudades(cdEstado, ctrl.signal);
         if (ctrl.signal.aborted) return;
-        if (res.ok && "ciudades" in res.data) setCiudades(res.data.ciudades);
+        if (res.ok && "ciudades" in res.data) {
+          setCiudades(res.data.ciudades);
+        } else if (!res.ok && res.error === "aborted") {
+          return;
+        } else {
+          setRetryKind("ciudades");
+          setApiError("No se pudieron cargar las ciudades de Seguros Caracas.");
+        }
       } finally {
         if (!ctrl.signal.aborted) setLoadingCiudades(false);
       }
     })().catch(() => {});
     return () => ctrl.abort();
-  }, [cdEstado]);
+  }, [cdEstado, ciudadesRetry]);
 
   useEffect(() => {
     if (!cdEstado || !cdCiudad) return;
@@ -413,13 +424,20 @@ export default function CotizarPage() {
       try {
         const res = await segurosCaracasClient.getSectores(cdEstado, cdCiudad, ctrl.signal);
         if (ctrl.signal.aborted) return;
-        if (res.ok && "sectores" in res.data) setSectores(res.data.sectores);
+        if (res.ok && "sectores" in res.data) {
+          setSectores(res.data.sectores);
+        } else if (!res.ok && res.error === "aborted") {
+          return;
+        } else {
+          setRetryKind("sectores");
+          setApiError("No se pudieron cargar los sectores de Seguros Caracas.");
+        }
       } finally {
         if (!ctrl.signal.aborted) setLoadingSectores(false);
       }
     })().catch(() => {});
     return () => ctrl.abort();
-  }, [cdEstado, cdCiudad]);
+  }, [cdEstado, cdCiudad, sectoresRetry]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
   const updE = (k: keyof EmpresaForm,     v: string) => setEmpresa(p        => ({ ...p, [k]: v }));
@@ -462,6 +480,7 @@ export default function CotizarPage() {
         cdSector: "", deSector: "",
       },
     }));
+    setApiError(null);
     setSectores([]);
     clearInmuebleError("cdEstado");
   };
@@ -480,6 +499,7 @@ export default function CotizarPage() {
         cdSector: "", deSector: "",
       },
     }));
+    setApiError(null);
     clearInmuebleError("cdCiudad");
   };
 
@@ -821,10 +841,15 @@ export default function CotizarPage() {
                       display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
                     }}>
                       <span>{apiError}</span>
-                      {!loadingListas && (
+                      {!loadingListas && !loadingCiudades && !loadingSectores && (
                         <button
                           type="button"
-                          onClick={() => { setEstadoOpts([]); setListasRetry(n => n + 1); }}
+                          onClick={() => {
+                            setApiError(null);
+                            if (retryKind === "listas") { setEstadoOpts([]); setListasRetry(n => n + 1); }
+                            else if (retryKind === "ciudades") setCiudadesRetry(n => n + 1);
+                            else setSectoresRetry(n => n + 1);
+                          }}
                           style={{
                             flexShrink: 0, fontSize: 11, fontWeight: 700, color: "#B45309",
                             background: "transparent", border: "1px solid rgba(217,119,6,0.4)",
