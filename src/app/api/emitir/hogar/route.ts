@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, clientIp } from "@/lib/security/rate-limit";
 import { rateLimit as rlConfig } from "@/lib/security/env";
 import { isAllowedOrigin } from "@/lib/security/origin";
+import { classifyEmitirResult } from "@/lib/api/emitir-result";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,15 +56,43 @@ export async function POST(req: NextRequest) {
 
   // Forward to our own SC proxy with the Bearer token injected server-side.
   const origin = req.nextUrl.origin;
-  const res = await fetch(`${origin}/api/seguros-caracas/suscribir`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${origin}/api/seguros-caracas/suscribir`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return NextResponse.json({ error: "upstream_unreachable" }, { status: 502 });
+  }
 
-  const data = await res.json();
-  return NextResponse.json(data, { status: res.status });
+  // Never trust the upstream body: parse defensively and classify it.
+  let data: unknown;
+  try {
+    data = JSON.parse(await res.text());
+  } catch {
+    data = undefined;
+  }
+
+  const result = classifyEmitirResult(res.status, data);
+  if (result.ok) {
+    return NextResponse.json(data, { status: res.status });
+  }
+  return NextResponse.json(
+    {
+      error: result.code,
+      message: result.message,
+      ...(result.code === "sc_rejected"
+        ? {
+            cdError: (data as { cdError?: number }).cdError,
+            ...(result.deError ? { deError: result.deError } : {}),
+          }
+        : {}),
+    },
+    { status: result.status }
+  );
 }
