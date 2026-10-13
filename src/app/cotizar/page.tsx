@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { segurosCaracasClient } from "@/lib/api/seguros-caracas";
 import { EnvBanner } from "@/components/sc/env-banner";
@@ -322,6 +323,7 @@ function PersonaFields({
 
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
 export default function CotizarPage() {
+  const router = useRouter();
   const [step, setStep]       = useState<Step>(1);
   const [ramo, setRamo]       = useState<Ramo | null>(null);
   const [loading, setLoading] = useState(false);
@@ -740,12 +742,15 @@ export default function CotizarPage() {
                   ¿Qué ramo desea cotizar?
                 </h1>
                 <p style={{ fontSize: 13.5, color: "#4A464A" }}>
-                  Seleccione el tipo de seguro para su empresa.
+                  La cotización en línea está disponible para Hogar. Para Automóvil, Salud o Patrimoniales,{" "}
+                  <a href="https://wa.me/582127458878" target="_blank" rel="noopener noreferrer" style={{ color: "#3A1335", fontWeight: 600 }}>
+                    escríbanos por WhatsApp
+                  </a>.
                 </p>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                {RAMOS.map(r => {
+                {RAMOS.filter(r => r.id === "hogar").map(r => {
                   const selected = ramo === r.id;
                   return (
                     <button
@@ -908,20 +913,10 @@ export default function CotizarPage() {
                   <Select
                     label="Índole del inmueble"
                     error={hogarErrors?.inmueble.cdIndole}
-                    options={indoleOpts.length > 0 ? indoleOpts : [
-                      { value: "1", label: "Apartamento Residencial" },
-                      { value: "2", label: "Casa Residencial"        },
-                      { value: "3", label: "Local Comercial"         },
-                      { value: "4", label: "Oficina"                 },
-                    ]}
+                    options={indoleOpts}
                     value={hogarData.inmueble.cdIndole}
                     onChange={v => {
-                      const opts = indoleOpts.length > 0 ? indoleOpts : [
-                        { value: "1", label: "Apartamento Residencial" },
-                        { value: "2", label: "Casa Residencial"        },
-                        { value: "3", label: "Local Comercial"         },
-                        { value: "4", label: "Oficina"                 },
-                      ];
+                      const opts = indoleOpts;
                       updHI("cdIndole", v);
                       updHI("deInmueble", opts.find(o => o.value === v)?.label ?? "");
                     }}
@@ -1068,7 +1063,7 @@ export default function CotizarPage() {
                     Comparativa de cotizaciones
                   </h2>
                   <p style={{ fontSize: 12.5, color: "#4A464A" }}>
-                    {displayCards.length} aseguradora{displayCards.length !== 1 ? "s" : ""} · válida 48 h
+                    {displayCards.length} aseguradora{displayCards.length !== 1 ? "s" : ""}
                   </p>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -1147,23 +1142,6 @@ export default function CotizarPage() {
                       </div>
                     </div>
 
-                    <div style={{ marginBottom: 14 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                        <span style={{ fontSize: 10, fontWeight: 600, color: "#7A7A8A", letterSpacing: "0.06em", textTransform: "uppercase" as const }}>
-                          Score de cobertura
-                        </span>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: oferta.color }}>{oferta.score}/100</span>
-                      </div>
-                      <div style={{ height: 5, backgroundColor: "rgba(58,19,53,0.07)", borderRadius: 99, overflow: "hidden" }}>
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${oferta.score}%` }}
-                          transition={{ delay: 0.25 + i * 0.1, duration: 0.75, ease: [0.23, 1, 0.32, 1] }}
-                          style={{ height: "100%", borderRadius: 99, backgroundColor: oferta.color }}
-                        />
-                      </div>
-                    </div>
-
                     <div style={{ height: 1, backgroundColor: "rgba(58,19,53,0.08)", marginBottom: 14 }} />
 
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px", marginBottom: 16 }}>
@@ -1181,6 +1159,7 @@ export default function CotizarPage() {
 
                     <button
                       disabled={!CREDENTIALS_READY}
+                      onClick={() => { if (CREDENTIALS_READY) router.push("/emitir"); }}
                       style={{
                         width: "100%", padding: "11px 16px", borderRadius: 4,
                         backgroundColor: CREDENTIALS_READY
