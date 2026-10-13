@@ -19,3 +19,4 @@ coverage
 security-report.json
 scripts/security-scan.mjs
 .do
+cabal-mcp
