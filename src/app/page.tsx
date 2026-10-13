@@ -296,12 +296,11 @@ export default function LandingPage() {
   const [cotizadorSuma, setCotizadorSuma] = useState("");
 
   // Hover states for contact section icons
-  const [phoneHover, setPhoneHover] = useState(false);
   const [waHover, setWaHover] = useState(false);
 
   // Contact form state
   const [formData, setFormData] = useState({ nombre: "", rif: "", email: "", mensaje: "" });
-  const [sending, setSending] = useState(false);
+  const [sending] = useState(false);
   const [sent, setSent] = useState(false);
 
   // Hover state for ramos cards
@@ -313,11 +312,16 @@ export default function LandingPage() {
     return () => window.removeEventListener("scroll", fn);
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSending(true);
-    await new Promise(r => setTimeout(r, 1500));
-    setSending(false);
+    const lines = [
+      "Solicitud de asesoría — Cabal Corretaje de Seguros",
+      formData.nombre && `Nombre / Razón social: ${formData.nombre}`,
+      formData.rif && `RIF / Cédula: ${formData.rif}`,
+      formData.email && `Correo: ${formData.email}`,
+      formData.mensaje && `Mensaje: ${formData.mensaje}`,
+    ].filter(Boolean).join("\n");
+    window.open(`https://wa.me/582127458878?text=${encodeURIComponent(lines)}`, "_blank", "noopener,noreferrer");
     setSent(true);
   };
 
@@ -961,40 +965,12 @@ export default function LandingPage() {
                   Nuestro equipo está disponible para acompañarle en todo momento, desde la cotización hasta la gestión de su siniestro.
                 </p>
 
-                {/* Phone */}
-                <div
-                  style={{ display: "flex", gap: "24px", alignItems: "center", marginBottom: "32px" }}
-                  onMouseEnter={() => setPhoneHover(true)}
-                  onMouseLeave={() => setPhoneHover(false)}
-                >
-                  <div style={{
-                    width: "64px", height: "64px", borderRadius: "9999px", flexShrink: 0,
-                    background: phoneHover ? "white" : "rgba(255,255,255,0.10)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    transition: "background 200ms ease",
-                  }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                      stroke={phoneHover ? "#3a1335" : "white"} strokeWidth="2"
-                      strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.56 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div style={{
-                      fontSize: "10px", fontWeight: 700,
-                      textTransform: "uppercase", letterSpacing: "0.2em",
-                      color: "rgba(255,255,255,0.50)", marginBottom: "4px",
-                    }}>Teléfono</div>
-                    <a href="tel:[TELÉFONO REAL]" style={{
-                      color: "white", textDecoration: "none",
-                      fontSize: "24px", fontWeight: 700,
-                    }}>[TELÉFONO REAL]</a>
-                  </div>
-                </div>
-
                 {/* WhatsApp */}
-                <div
-                  style={{ display: "flex", gap: "24px", alignItems: "center" }}
+                <a
+                  href="https://wa.me/582127458878"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: "flex", gap: "24px", alignItems: "center", textDecoration: "none" }}
                   onMouseEnter={() => setWaHover(true)}
                   onMouseLeave={() => setWaHover(false)}
                 >
@@ -1019,7 +995,7 @@ export default function LandingPage() {
                       Atención por Chat
                     </div>
                   </div>
-                </div>
+                </a>
               </div>
 
               <div style={{
@@ -1055,8 +1031,13 @@ export default function LandingPage() {
                     display: "flex", alignItems: "center", justifyContent: "center",
                     margin: "0 auto 16px", color: "#3a1335",
                   }}><CheckIcon /></div>
-                  <p style={{ fontSize: "18px", fontWeight: 700, color: "#3a1335" }}>¡Solicitud enviada!</p>
-                  <p style={{ fontSize: "14px", color: "#4e444b", marginTop: "8px" }}>Le contactamos a la brevedad.</p>
+                  <p style={{ fontSize: "18px", fontWeight: 700, color: "#3a1335" }}>Continúe en WhatsApp</p>
+                  <p style={{ fontSize: "14px", color: "#4e444b", marginTop: "8px" }}>
+                    Se abrió WhatsApp con su solicitud. Presione enviar allí para que la recibamos.{" "}
+                    <a href="https://wa.me/582127458878" target="_blank" rel="noopener noreferrer" style={{ color: "#3a1335", fontWeight: 600 }}>
+                      Abrir WhatsApp
+                    </a>
+                  </p>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -1124,7 +1105,7 @@ export default function LandingPage() {
                     onMouseEnter={e => { if (!sending) e.currentTarget.style.opacity = "0.9"; }}
                     onMouseLeave={e => { if (!sending) e.currentTarget.style.opacity = "1"; }}
                   >
-                    {sending ? "Enviando…" : "Enviar Solicitud de Asesoría"}
+                    Enviar solicitud por WhatsApp
                   </button>
                 </form>
               )}
@@ -1151,22 +1132,7 @@ export default function LandingPage() {
               <p style={{ color: "rgba(255,255,255,0.60)", fontSize: "14px", lineHeight: 1.7, marginBottom: "24px", maxWidth: "240px" }}>
                 Corretaje independiente de seguros con más de 20 años protegiendo empresas y familias venezolanas.
               </p>
-              <div style={{ display: "flex", gap: "12px" }}>
-                {["in", "tw"].map(icon => (
-                  <a key={icon} href="#" style={{
-                    width: "40px", height: "40px", borderRadius: "9999px",
-                    border: "1px solid rgba(255,255,255,0.20)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: "white", textDecoration: "none",
-                    fontSize: "12px", fontWeight: 700,
-                    transition: "background 200ms ease",
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "white"; e.currentTarget.style.color = "#3a1335"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "white"; }}
-                  >{icon.toUpperCase()}</a>
-                ))}
-              </div>
-            </div>
+                          </div>
 
             {/* Col 2 — Services */}
             <div>
@@ -1211,18 +1177,7 @@ export default function LandingPage() {
                 Caracas, Venezuela<br />
                 RIF: J-405144750
               </p>
-              {/* Map placeholder */}
-              <div style={{
-                border: "1px solid rgba(255,255,255,0.10)",
-                borderRadius: "8px",
-                aspectRatio: "16/9",
-                background: "rgba(255,255,255,0.04)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                color: "rgba(255,255,255,0.30)", fontSize: "12px",
-              }}>
-                Ver en mapa
-              </div>
-            </div>
+                          </div>
           </div>
 
           {/* Bottom bar */}
