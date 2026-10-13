@@ -24,7 +24,7 @@ services:
     dockerfile_path: Dockerfile
     source_dir: /
     github:
-      repo: DanveDC/cabal-web
+      repo: DanveDC/pagina-web-cabal
       branch: main
       deploy_on_push: true
 
