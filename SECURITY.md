@@ -94,6 +94,15 @@ Defense in depth, in order:
   `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set. Set both keys or neither.
 - **Order:** service enabled → origin → per-IP limit → Turnstile → body → daily cap → SC.
 
+### Private link for `/emitir` (`EMITIR_ACCESS_KEY`)
+
+When set (runtime secret), `src/proxy.ts` gates `/emitir`, `/api/emitir/*` and
+`/api/consultar-cliente`: `?acceso=<key>` sets an httpOnly cookie holding an
+HMAC of the key (never the key) and redirects to the clean URL; without a valid
+cookie pages show `/acceso-restringido` and APIs return 401. Prefetch requests
+are not exempt from the proxy, so the gate cannot be bypassed with a prefetch
+header. Rotating the key revokes every issued cookie.
+
 ### Demo mode (`NEXT_PUBLIC_SC_DEMO=true`)
 
 `/emitir` uses `src/lib/api/seguros-caracas-demo.ts` (sample data from SC's spec,
