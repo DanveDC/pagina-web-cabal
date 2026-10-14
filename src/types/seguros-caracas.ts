@@ -214,7 +214,10 @@ export function toSuscribirPersona(p: PersonaFormState): SuscribirPersona {
   const digits = p.cedulaRif.replace(/\D/g, "");
   return {
     ...p,
-    sexo: (["M", "F", "X"].includes(p.sexo) ? p.sexo : "") as Sexo,
+    // Spec: "X" for non-natural persons (J/G); M/F for natural persons.
+    sexo: (["J", "G"].includes(p.nacionalidad.trim().toUpperCase())
+      ? "X"
+      : ["M", "F"].includes(p.sexo) ? p.sexo : "") as Sexo,
     cedulaRif: digits ? Number(digits) : 0,
   };
 }

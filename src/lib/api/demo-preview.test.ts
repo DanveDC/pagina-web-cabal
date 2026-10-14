@@ -52,3 +52,11 @@ test("preview puts credentials as placeholders and keeps the spec shape", () => 
   assert.equal(prev.pedido.asegurado.estado, "MIRANDA");
   assert.equal(typeof prev.pedido.asegurado.cedulaRif, "number");
 });
+
+test("persona jurídica is sent with sexo X (spec §4)", async () => {
+  const { toSuscribirPersona } = await import("@/types/seguros-caracas");
+  const j = toSuscribirPersona({ ...PERSONA_EMPTY, nacionalidad: "J", cedulaRif: "405144750", sexo: "" });
+  assert.equal(j.sexo, "X");
+  const v = toSuscribirPersona({ ...PERSONA_EMPTY, nacionalidad: "V", cedulaRif: "1234", sexo: "F" });
+  assert.equal(v.sexo, "F");
+});
