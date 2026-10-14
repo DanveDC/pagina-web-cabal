@@ -16,6 +16,12 @@ const inter = Inter({
   display: "swap",
 });
 
+// The CSP in src/proxy.ts uses a per-request nonce + 'strict-dynamic'. Next.js
+// can only stamp that nonce on its <script> tags when the page is rendered per
+// request; prerendered (static) HTML carries no nonce and the browser blocks
+// every script, leaving the site non-interactive. Render all routes dynamically.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: {
     default: "Cabal Corretaje de Seguros",
