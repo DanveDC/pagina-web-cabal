@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { segurosCaracasClient } from "@/lib/api/seguros-caracas";
 import { EnvBanner } from "@/components/sc/env-banner";
+import { SC_DEMO } from "@/lib/sc-ambiente";
 import { describeScError } from "@/lib/api/emitir-result";
 import { PendingActivation } from "@/components/sc/pending-activation";
 import { PERSONA_EMPTY } from "@/types/seguros-caracas";
@@ -601,6 +602,7 @@ export default function CotizarPage() {
       <PendingActivation
         title="Cotizador HOGAR — pendiente de activación"
         description="Este módulo consume el servicio web Convenios HOGAR de Seguros Caracas y todavía no está activo. Estará disponible en cuanto Seguros Caracas habilite el acceso. Mientras tanto, no se muestran cotizaciones."
+        action={SC_DEMO ? { href: "/emitir", label: "Ver demostración del flujo de emisión" } : undefined}
       />
     </div>
   );

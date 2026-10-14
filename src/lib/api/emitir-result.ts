@@ -29,6 +29,12 @@ const MESSAGES: Record<string, string> = {
     "El servicio de emisión no está disponible por el momento. Por favor intente más tarde.",
   rate_limited:
     "Ha realizado demasiadas solicitudes en poco tiempo. Por favor espere un momento e intente nuevamente.",
+  daily_cap_reached:
+    "El servicio de emisión alcanzó su límite diario. Por favor intente nuevamente mañana.",
+  captcha_failed:
+    "No se pudo completar la verificación de seguridad. Por favor resuélvala de nuevo e intente otra vez.",
+  captcha_unavailable:
+    "La verificación de seguridad no está disponible en este momento. Por favor intente en unos minutos.",
   forbidden_origin:
     "No se pudo validar el origen de la solicitud. Recargue la página e intente nuevamente.",
   unauthorized:

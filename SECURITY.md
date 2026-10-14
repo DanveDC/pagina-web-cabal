@@ -82,6 +82,25 @@ Defense in depth, in order:
 - Multi-stage build, `output: "standalone"`, runs as non-root `nextjs` user,
   no dev dependencies in the runtime image, `HEALTHCHECK` on `/api/health`.
 
+### Emisión anti-abuse (`/api/emitir/hogar`)
+
+- **Per-IP limit:** `RL_EMIT_MAX` emissions per `RL_WINDOW_MS` (default 3/min).
+- **Global daily cap:** `EMIT_DAILY_MAX` (default 50) per America/Caracas day,
+  counted only for requests that pass every other check. Logs `[ALERTA-EMISION]`
+  at 80% and when the cap is hit. In-memory: resets on redeploy, single instance.
+- **Cloudflare Turnstile:** when `TURNSTILE_SECRET_KEY` is set, a valid token in
+  `x-turnstile-token` is required (fail-closed: Cloudflare unreachable → 503).
+  The widget renders on the confirmation step when
+  `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set. Set both keys or neither.
+- **Order:** service enabled → origin → per-IP limit → Turnstile → body → daily cap → SC.
+
+### Demo mode (`NEXT_PUBLIC_SC_DEMO=true`)
+
+`/emitir` uses `src/lib/api/seguros-caracas-demo.ts` (sample data from SC's spec,
+no `fetch`) and, instead of emitting, shows the exact `suscribir` body with
+`cdProductor`/`cdConvenio`/`cdUsuario` as placeholders. Ignored when
+`NEXT_PUBLIC_SC_ENABLED=true`. Server routes are unchanged.
+
 ## Known limitations / follow-ups
 
 - **Rate limiter is in-memory** — correct for a single instance. Scaling past one

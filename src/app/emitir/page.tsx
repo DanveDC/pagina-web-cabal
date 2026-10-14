@@ -3,9 +3,13 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { segurosCaracasClient } from "@/lib/api/seguros-caracas";
+import { segurosCaracasDemoClient, DEMO_CLIENTE_CEDULA } from "@/lib/api/seguros-caracas-demo";
+import { buildUpstreamPreview } from "@/lib/api/suscribir-preview";
 import { EnvBanner } from "@/components/sc/env-banner";
+import { DemoBanner } from "@/components/sc/demo-banner";
+import { Turnstile } from "@/components/sc/turnstile";
 import { PendingActivation } from "@/components/sc/pending-activation";
-import { SC_ENABLED, SC_AMBIENTE } from "@/lib/sc-ambiente";
+import { SC_ENABLED, SC_AMBIENTE, SC_DEMO, TURNSTILE_SITE_KEY } from "@/lib/sc-ambiente";
 import {
   classifyEmitirResult,
   describeScError,
@@ -36,6 +40,9 @@ import type {
   Propuesta,
   FrecuenciaPago,
 } from "@/types/seguros-caracas";
+
+// Demo mode reads local sample data and never touches the network.
+const scClient = SC_DEMO ? segurosCaracasDemoClient : segurosCaracasClient;
 
 // ─── SVG Icons ───────────────────────────────────────────────────────────────
 
@@ -212,7 +219,7 @@ function StepPlan({
   const [selected, setSelected] = useState<{ plan: Propuesta; freq: FrecuenciaPago } | null>(null);
 
   useEffect(() => {
-    segurosCaracasClient.getPropuestas()
+    scClient.getPropuestas()
       .then((r) => {
         if (r.ok && "propuestas" in r.data) setPropuestas((r.data as PropuestasOk).propuestas);
         else setError(r.ok ? describeScError("upstream_bad_response") : describeScError(r.error));
@@ -336,7 +343,7 @@ function StepInmueble({
 
   useEffect(() => {
     let cancelled = false;
-    segurosCaracasClient.getListasIniciales().then((r) => {
+    scClient.getListasIniciales().then((r) => {
       if (cancelled) return;
       if (r.ok && "estados" in r.data) {
         setListas(r.data as ListasInicialesOk);
@@ -360,7 +367,7 @@ function StepInmueble({
     if (!cdEstado) return;
     setLoadingCiudades(true);
     setCatalogError("");
-    const r = await segurosCaracasClient.getCiudades(cdEstado);
+    const r = await scClient.getCiudades(cdEstado);
     if (r.ok && "ciudades" in r.data) {
       setCiudades((r.data as CiudadesOk).ciudades);
     } else {
@@ -377,7 +384,7 @@ function StepInmueble({
     if (!cdCiudad || !form.cdEstado) return;
     setLoadingSectores(true);
     setCatalogError("");
-    const r = await segurosCaracasClient.getSectores(form.cdEstado, cdCiudad);
+    const r = await scClient.getSectores(form.cdEstado, cdCiudad);
     if (r.ok && "sectores" in r.data) {
       setSectores((r.data as SectoresOk).sectores);
     } else {
@@ -499,7 +506,7 @@ function PersonaForm({
     if (!check.ok) { setLookupError(check.reason); return; }
     setLookingUp(true);
     try {
-      const r = await segurosCaracasClient.getCliente(data.nacionalidad, data.cedulaRif);
+      const r = await scClient.getCliente(data.nacionalidad, data.cedulaRif);
       if (r.ok && "cliente" in r.data) {
         const c = (r.data as ClienteOk).cliente;
         onChange("nombres", c.nombres);
@@ -553,6 +560,11 @@ function PersonaForm({
         </div>
       </div>
       {lookupError && <p style={{ fontSize: "12px", color: "#DC2626", marginTop: "-12px", marginBottom: "16px" }}>{lookupError}</p>}
+      {SC_DEMO && (
+        <p style={{ fontSize: "12px", color: "#1E3A8A", marginTop: lookupError ? "0" : "-12px", marginBottom: "16px" }}>
+          Demostración: pruebe la búsqueda con {DEMO_CLIENTE_CEDULA.nacionalidad}-{DEMO_CLIENTE_CEDULA.cedulaRif} (cliente de ejemplo de la especificación).
+        </p>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
         {!jurídica && (
@@ -590,6 +602,15 @@ function PersonaForm({
         </Field>
         <Field label="Teléfono" error={errors.nuTlf} required>
           <TextInput value={data.nuTlf} onChange={(v) => set("nuTlf", v)} placeholder="7458878" />
+        </Field>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 24px" }}>
+        <Field label="Estado de residencia" error={errors.estado} required>
+          <TextInput value={data.estado} onChange={(v) => set("estado", v)} placeholder="MIRANDA" />
+        </Field>
+        <Field label="Ciudad de residencia" error={errors.ciudad} required>
+          <TextInput value={data.ciudad} onChange={(v) => set("ciudad", v)} placeholder="CARACAS" />
         </Field>
       </div>
 
@@ -708,21 +729,40 @@ function StepConfirmar({
   const [emittedAt, setEmittedAt] = useState<Date | null>(null);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const [manualCopyText, setManualCopyText] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaReset, setCaptchaReset] = useState(0);
+  const [preview, setPreview] = useState<ReturnType<typeof buildUpstreamPreview> | null>(null);
+  const captchaRequired = Boolean(TURNSTILE_SITE_KEY);
 
   const emitir = async () => {
-    setError(""); setSubmitting(true);
+    setError("");
     const result = buildSuscribirPayload(
       { inmueble, asegurado, tomadorIgualAsegurado: tomadorIgual, tomador },
       { cdOpcion: plan.cdOpcion, cdMoneda: plan.cdMoneda, frPago: freq.cdFrPago }
     );
     if (!result.ok) {
       setError("Hay errores de validación. Por favor regrese y corrija los datos.");
-      setSubmitting(false); return;
+      return;
     }
+    if (captchaRequired && !captchaToken) {
+      setError("Complete la verificación de seguridad (antibots) antes de continuar.");
+      return;
+    }
+    if (SC_DEMO) {
+      // Demo: show the exact body the server would send to Seguros Caracas.
+      setPreview(buildUpstreamPreview(result.payload));
+      setCopyState("idle");
+      setManualCopyText("");
+      return;
+    }
+    setSubmitting(true);
     try {
       const res = await fetch("/api/emitir/hogar", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(captchaToken ? { "x-turnstile-token": captchaToken } : {}),
+        },
         body: JSON.stringify(result.payload),
       });
       let data: unknown;
@@ -744,12 +784,18 @@ function StepConfirmar({
     } catch {
       setError("Error de conexión al emitir la póliza.");
     }
+    // Turnstile tokens are single-use: always ask for a fresh one.
+    setCaptchaReset((n) => n + 1);
     setSubmitting(false);
   };
 
   const copiar = async () => {
-    if (!poliza || !emittedAt) return;
-    const text = formatPolizaText(poliza, emittedAt, SC_AMBIENTE);
+    const text = preview
+      ? JSON.stringify(preview, null, 2)
+      : poliza && emittedAt
+        ? formatPolizaText(poliza, emittedAt, SC_AMBIENTE)
+        : "";
+    if (!text) return;
     setManualCopyText("");
     try {
       if (navigator.clipboard && window.isSecureContext) {
@@ -775,6 +821,55 @@ function StepConfirmar({
       setCopyState("failed");
     }
   };
+
+  if (preview) return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px", color: "#1E3A8A" }}>
+        <CheckCircleIcon />
+        <h2 style={{ fontFamily: "var(--font-display, Georgia, serif)", fontSize: "22px", fontWeight: 700, color: "#3A1335" }}>
+          Solicitud validada (demostración)
+        </h2>
+      </div>
+      <p style={{ fontSize: "14px", color: "#4e444b", lineHeight: 1.6, marginBottom: "8px" }}>
+        Todos los datos pasaron las validaciones. Este es el JSON exacto que el servidor de Cabal enviaría por POST al servicio{" "}
+        <code style={{ fontSize: "13px", backgroundColor: "#f5ebef", padding: "1px 6px", borderRadius: "4px" }}>/hogarswservicios/hogarsw/suscribir</code>{" "}
+        de Seguros Caracas.
+      </p>
+      <p style={{ fontSize: "13px", color: "#7a6d74", lineHeight: 1.6, marginBottom: "20px" }}>
+        <strong>cdProductor</strong>, <strong>cdConvenio</strong> y <strong>cdUsuario</strong> los agrega el servidor y nunca pasan por el navegador. Se completarán cuando Seguros Caracas los asigne. No se envió ninguna información ni se emitió ninguna póliza.
+      </p>
+
+      <pre
+        aria-label="JSON de la solicitud suscribir"
+        style={{ backgroundColor: "#1f1a1d", color: "#f5ebef", fontSize: "12.5px", lineHeight: 1.55, padding: "20px", borderRadius: "8px", overflowX: "auto", maxHeight: "560px", marginBottom: "16px", whiteSpace: "pre" }}
+      >
+        {JSON.stringify(preview, null, 2)}
+      </pre>
+
+      <div style={{ marginBottom: "24px" }}>
+        <button onClick={copiar} style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "10px 20px", borderRadius: "4px", fontSize: "14px", fontWeight: 600, backgroundColor: "transparent", color: "#3A1335", border: "1.5px solid #3A1335", cursor: "pointer" }}>
+          Copiar JSON
+        </button>
+        <div role="status" aria-live="polite" style={{ fontSize: "13px", marginTop: "8px", color: copyState === "failed" ? "#DC2626" : "#059669" }}>
+          {copyState === "copied" && "JSON copiado al portapapeles."}
+          {copyState === "failed" && "No se pudo copiar automáticamente. Seleccione y copie el texto manualmente."}
+        </div>
+        {manualCopyText && (
+          <textarea readOnly value={manualCopyText} rows={10} onFocus={(e) => e.currentTarget.select()}
+            style={{ width: "100%", marginTop: "8px", fontSize: "12px", padding: "10px", border: "1px solid #d2c2cb", borderRadius: "6px", fontFamily: "monospace" }} />
+        )}
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+        <button onClick={() => { setPreview(null); setCaptchaReset((n) => n + 1); }} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "11px 20px", borderRadius: "4px", fontSize: "14px", fontWeight: 600, backgroundColor: "transparent", color: "#3A1335", border: "1.5px solid #3A1335", cursor: "pointer" }}>
+          <ArrowLeftIcon /> Volver al resumen
+        </button>
+        <button onClick={() => window.location.reload()} style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "11px 24px", borderRadius: "4px", fontSize: "14px", fontWeight: 600, backgroundColor: "#3A1335", color: "#fff", border: "none", cursor: "pointer" }}>
+          Nueva demostración
+        </button>
+      </div>
+    </div>
+  );
 
   if (poliza) return (
     <div style={{ textAlign: "center", padding: "40px 0" }}>
@@ -839,9 +934,11 @@ function StepConfirmar({
         <h2 style={{ fontFamily: "var(--font-display, Georgia, serif)", fontSize: "22px", fontWeight: 700, color: "#3A1335" }}>Confirme y emita</h2>
       </div>
       <p style={{ fontSize: "14px", color: "#7a6d74", marginBottom: "28px" }}>
-        {SC_AMBIENTE === "pruebas"
-          ? "Se emitirá una póliza en el ambiente de PRUEBAS de Seguros Caracas."
-          : "Revise los datos antes de emitir. Esta acción generará una póliza real en Seguros Caracas."}
+        {SC_DEMO
+          ? "Modo demostración: no se emitirá ninguna póliza. Al continuar se validan todos los datos y se muestra el JSON exacto que se enviaría al servicio suscribir de Seguros Caracas."
+          : SC_AMBIENTE === "pruebas"
+            ? "Se emitirá una póliza en el ambiente de PRUEBAS de Seguros Caracas."
+            : "Revise los datos antes de emitir. Esta acción generará una póliza real en Seguros Caracas."}
       </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "28px" }}>
@@ -890,7 +987,14 @@ function StepConfirmar({
         </div>
       )}
 
-      {SC_AMBIENTE !== "pruebas" && (
+      {captchaRequired && (
+        <div style={{ marginBottom: "20px" }}>
+          <Label>Verificación de seguridad</Label>
+          <Turnstile siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} resetSignal={captchaReset} />
+        </div>
+      )}
+
+      {SC_AMBIENTE !== "pruebas" && !SC_DEMO && (
         <div style={{ padding: "14px 18px", backgroundColor: "#fffbeb", border: "1px solid #fde68a", borderRadius: "6px", fontSize: "13px", color: "#92400e", marginBottom: "24px" }}>
           ⚠ Al confirmar se emitirá una <strong>póliza real</strong> en Seguros Caracas. Esta acción no se puede deshacer.
         </div>
@@ -900,14 +1004,14 @@ function StepConfirmar({
         <button onClick={onBack} disabled={submitting} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "11px 20px", borderRadius: "4px", fontSize: "14px", fontWeight: 600, backgroundColor: "transparent", color: "#3A1335", border: "1.5px solid #3A1335", cursor: "pointer" }}>
           <ArrowLeftIcon /> Atrás
         </button>
-        <button onClick={emitir} disabled={submitting} style={{
+        <button onClick={emitir} disabled={submitting || (captchaRequired && !captchaToken)} style={{
           display: "inline-flex", alignItems: "center", gap: "8px",
           padding: "11px 28px", borderRadius: "4px", fontSize: "14px", fontWeight: 700,
-          backgroundColor: submitting ? "#7a6d74" : "#C2A378",
+          backgroundColor: submitting || (captchaRequired && !captchaToken) ? "#7a6d74" : "#C2A378",
           color: "#fff", border: "none", cursor: submitting ? "wait" : "pointer",
           transition: "background-color 140ms ease",
         }}>
-          {submitting ? "Emitiendo póliza…" : "Emitir póliza"} {!submitting && <ArrowRightIcon />}
+          {submitting ? "Emitiendo póliza…" : SC_DEMO ? "Validar y ver JSON" : "Emitir póliza"} {!submitting && <ArrowRightIcon />}
         </button>
       </div>
     </div>
@@ -925,7 +1029,7 @@ export default function EmitirPage() {
   const [tomador, setTomador] = useState<PersonaFormState | null>(null);
   const [tomadorIgual, setTomadorIgual] = useState(true);
 
-  if (!SC_ENABLED) return (
+  if (!SC_ENABLED && !SC_DEMO) return (
     <div style={{ minHeight: "100dvh", backgroundColor: "#fff7f9" }}>
       <EnvBanner />
       <PendingActivation
@@ -945,6 +1049,7 @@ export default function EmitirPage() {
   return (
     <div style={{ minHeight: "100dvh", backgroundColor: "#fff7f9" }}>
       <EnvBanner />
+      <DemoBanner />
       {/* Nav */}
       <nav style={{ backgroundColor: "#3A1335", padding: "14px 32px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <Link href="/" style={{ textDecoration: "none", color: "#fff", fontWeight: 700, fontSize: "16px", fontFamily: "var(--font-display, Georgia, serif)" }}>

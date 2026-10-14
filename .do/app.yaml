@@ -56,6 +56,16 @@ services:
       - key: NEXT_PUBLIC_SC_AMBIENTE
         scope: BUILD_TIME
         value: "pruebas"
+      # Demo flow on sample data (never calls SC). Ignored when SC is enabled.
+      - key: NEXT_PUBLIC_SC_DEMO
+        scope: BUILD_TIME
+        value: "true"
+      # Cloudflare Turnstile site key (public). Empty = anti-bot widget off.
+      - key: NEXT_PUBLIC_TURNSTILE_SITE_KEY
+        scope: BUILD_TIME
+        value: ""
+      # TURNSTILE_SECRET_KEY: add in the dashboard as a SECRET together with the
+      # site key above. Set both or neither (secret without widget blocks emisión).
 
       # ── Set these in the dashboard before enabling the proxy ──
       # SC_BASE_URL is intentionally NOT defaulted here: with the proxy enabled

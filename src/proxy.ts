@@ -26,7 +26,8 @@ export function proxy(request: NextRequest) {
     `base-uri 'self'`,
     `form-action 'self'`,
     `frame-ancestors 'none'`,
-    `frame-src 'none'`,
+    // Cloudflare Turnstile (anti-bot) renders its challenge in an iframe.
+    `frame-src https://challenges.cloudflare.com`,
     `manifest-src 'self'`,
     `worker-src 'self' blob:`,
     ...(isDev ? [] : ["upgrade-insecure-requests"]),

@@ -19,6 +19,13 @@ ARG NEXT_PUBLIC_SC_ENABLED=false
 ENV NEXT_PUBLIC_SC_ENABLED=$NEXT_PUBLIC_SC_ENABLED
 ARG NEXT_PUBLIC_SC_AMBIENTE=pruebas
 ENV NEXT_PUBLIC_SC_AMBIENTE=$NEXT_PUBLIC_SC_AMBIENTE
+# Demo mode (sample data, shows the suscribir JSON, never calls SC). Ignored
+# once NEXT_PUBLIC_SC_ENABLED=true.
+ARG NEXT_PUBLIC_SC_DEMO=true
+ENV NEXT_PUBLIC_SC_DEMO=$NEXT_PUBLIC_SC_DEMO
+# Cloudflare Turnstile public site key (empty = anti-bot widget off).
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY=
+ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
 RUN npm run build
 
 # ─── Stage 3: runtime ────────────────────────────────────────────────────

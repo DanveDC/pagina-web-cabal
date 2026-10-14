@@ -12,6 +12,10 @@ import {
   validateInmueble,
   buildSuscribirPayload,
   sanitizePersonaField,
+  rifCheckDigit,
+  isValidRif,
+  isValidAreaCode,
+  ageFromDMY,
 } from "./seguros-caracas";
 import { PERSONA_EMPTY, type HogarFormState } from "@/types/seguros-caracas";
 
@@ -87,6 +91,8 @@ test("validatePersona passes a complete natural person", () => {
     edoCivil: "S",
     feNacimiento: "10/05/1990",
     email: "ana@example.com",
+    estado: "MIRANDA",
+    ciudad: "CARACAS",
     direccion: "Av. Principal, casa 4",
     cdAreaTlf: "212",
     nuTlf: "5551234",
@@ -98,9 +104,11 @@ test("validatePersona is lenient for persona jurídica (J)", () => {
   const e = validatePersona({
     ...PERSONA_EMPTY,
     nacionalidad: "J",
-    cedulaRif: "312345678",
+    cedulaRif: "405144750",
     apellidosRazonSocial: "ACME C.A.",
     email: "info@acme.com",
+    estado: "DISTRITO CAPITAL",
+    ciudad: "CARACAS",
     direccion: "Zona Industrial",
     cdAreaTlf: "212",
     nuTlf: "5551234",
@@ -133,6 +141,7 @@ const validForm = (): HogarFormState => ({
     ...PERSONA_EMPTY, nacionalidad: "V", cedulaRif: "12345678",
     nombres: "Ana", apellidosRazonSocial: "Pérez", sexo: "F", edoCivil: "S",
     feNacimiento: "10/05/1990", email: "ana@example.com",
+    estado: "MIRANDA", ciudad: "CARACAS",
     direccion: "Av. Principal casa 4", cdAreaTlf: "212", nuTlf: "5551234",
   },
   tomadorIgualAsegurado: true,
@@ -174,4 +183,44 @@ test("buildSuscribirPayload sanitises dirty input before building", () => {
     assert.equal(r.payload.pedido.asegurado.nombres, "Ana María");
     assert.equal(r.payload.pedido.hogar.deDireccion1.length, 50);
   }
+});
+
+test("rifCheckDigit matches known RIFs (SENIAT modulo 11)", () => {
+  assert.equal(rifCheckDigit("J", "40514475"), 0); // Cabal Corretaje J-40514475-0
+  assert.equal(rifCheckDigit("J", "31234567"), 5);
+  assert.ok(isValidRif("J", "405144750"));
+  assert.ok(!isValidRif("J", "405144751"));
+  assert.ok(!isValidRif("J", "40514475")); // missing check digit
+});
+
+test("validatePersona rejects a RIF with a wrong check digit", () => {
+  const e = validatePersona({
+    ...PERSONA_EMPTY, nacionalidad: "J", cedulaRif: "405144751",
+    apellidosRazonSocial: "ACME C.A.", email: "info@acme.com",
+    estado: "MIRANDA", ciudad: "CARACAS", direccion: "Zona Industrial",
+    cdAreaTlf: "212", nuTlf: "5551234",
+  });
+  assert.match(e.cedulaRif ?? "", /verificador/);
+});
+
+test("validatePersona enforces adult age, VE area codes, 7-digit numbers and residence", () => {
+  const base = {
+    ...PERSONA_EMPTY, nacionalidad: "V", cedulaRif: "12345678",
+    nombres: "Ana", apellidosRazonSocial: "Pérez", sexo: "F", edoCivil: "S",
+    email: "ana@example.com", direccion: "Av. Principal",
+  };
+  const minor = new Date(); minor.setFullYear(minor.getFullYear() - 10);
+  const dmy = (d: Date) => `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+  const e = validatePersona({ ...base, feNacimiento: dmy(minor), cdAreaTlf: "999", nuTlf: "12345" });
+  assert.match(e.feNacimiento ?? "", /mayor de edad/);
+  assert.ok(e.cdAreaTlf);
+  assert.ok(e.nuTlf);
+  assert.ok(e.estado && e.ciudad);
+});
+
+test("isValidAreaCode and ageFromDMY", () => {
+  for (const ok of ["212", "0212", "414", "0414", "0424", "0261"]) assert.ok(isValidAreaCode(ok), ok);
+  for (const bad of ["", "12", "0999", "0415", "5551"]) assert.ok(!isValidAreaCode(bad), bad);
+  assert.equal(ageFromDMY("15/06/2000", new Date(2026, 5, 14)), 25);
+  assert.equal(ageFromDMY("15/06/2000", new Date(2026, 5, 15)), 26);
 });

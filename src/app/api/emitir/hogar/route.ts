@@ -5,7 +5,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, clientIp } from "@/lib/security/rate-limit";
-import { rateLimit as rlConfig } from "@/lib/security/env";
+import { consumeDailyEmission } from "@/lib/security/daily-cap";
+import { rateLimit as rlConfig, turnstile as turnstileConfig } from "@/lib/security/env";
+import { verifyTurnstile } from "@/lib/security/turnstile";
 import { isAllowedOrigin } from "@/lib/security/origin";
 import { classifyEmitirResult } from "@/lib/api/emitir-result";
 
@@ -26,11 +28,8 @@ export async function POST(req: NextRequest) {
   // Rate-limit here, at the real entry point: the downstream fetch to the SC
   // proxy is server-to-server and carries no client IP, so its limiter would
   // otherwise bucket every emisión into one global key.
-  const rl = rateLimit(
-    `POST:emitir-hogar:${clientIp(req)}`,
-    rlConfig.sensitiveMax,
-    rlConfig.windowMs
-  );
+  const ip = clientIp(req);
+  const rl = rateLimit(`POST:emitir-hogar:${ip}`, rlConfig.emitMax, rlConfig.windowMs);
   if (!rl.ok) {
     return NextResponse.json(
       { error: "rate_limited" },
@@ -45,6 +44,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Anti-bot: a valid Cloudflare Turnstile token is required when configured.
+  if (turnstileConfig.secretKey) {
+    const check = await verifyTurnstile(
+      req.headers.get("x-turnstile-token"),
+      ip,
+      turnstileConfig.secretKey,
+      turnstileConfig.timeoutMs
+    );
+    if (!check.ok) {
+      return check.reason === "unavailable"
+        ? NextResponse.json({ error: "captcha_unavailable" }, { status: 503 })
+        : NextResponse.json({ error: "captcha_failed" }, { status: 403 });
+    }
+  }
+
   let body: unknown;
   try {
     const text = await req.text();
@@ -52,6 +66,15 @@ export async function POST(req: NextRequest) {
     body = JSON.parse(text);
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+
+  // Global daily cap: counted only for requests that will really reach SC.
+  const cap = consumeDailyEmission(rlConfig.emitDailyMax);
+  if (!cap.ok) {
+    return NextResponse.json(
+      { error: "daily_cap_reached" },
+      { status: 429, headers: { "Retry-After": String(cap.retryAfterSec) } }
+    );
   }
 
   // Forward to our own SC proxy with the Bearer token injected server-side.

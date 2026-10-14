@@ -5,6 +5,8 @@ type PendingActivationProps = {
   description: string;
   flow?: string[];
   backHref?: string;
+  /** Optional primary action (e.g. link to the demo flow). */
+  action?: { href: string; label: string };
 };
 
 // Shown when the Seguros Caracas integration is not active yet. It must never
@@ -14,6 +16,7 @@ export function PendingActivation({
   description,
   flow,
   backHref = "/",
+  action,
 }: PendingActivationProps) {
   return (
     <div
@@ -53,6 +56,25 @@ export function PendingActivation({
           >
             {flow.join(" → ")}
           </p>
+        )}
+        {action && (
+          <Link
+            href={action.href}
+            style={{
+              display: "inline-block",
+              marginTop: 24,
+              marginRight: 12,
+              padding: "10px 24px",
+              borderRadius: 4,
+              backgroundColor: "#C2A378",
+              color: "#fff",
+              fontSize: 14,
+              fontWeight: 600,
+              textDecoration: "none",
+            }}
+          >
+            {action.label}
+          </Link>
         )}
         <Link
           href={backHref}

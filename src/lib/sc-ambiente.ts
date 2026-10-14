@@ -19,3 +19,16 @@ export const SC_ENABLED: boolean = process.env.NEXT_PUBLIC_SC_ENABLED === "true"
 
 export const SC_AMBIENTE_BANNER_TEXT =
   "AMBIENTE DE PRUEBAS · Seguros Caracas (sasweb-test). Las pólizas emitidas aquí no tienen validez comercial.";
+
+/**
+ * Demo mode: the emission form runs on local sample data from Seguros Caracas'
+ * own spec and shows the JSON that would be sent, without calling any API.
+ * The real integration always takes precedence.
+ */
+export const SC_DEMO: boolean = !SC_ENABLED && process.env.NEXT_PUBLIC_SC_DEMO === "true";
+
+export const SC_DEMO_BANNER_TEXT =
+  "MODO DEMOSTRACIÓN · Datos de ejemplo tomados de la especificación de Seguros Caracas. No se envía información a Seguros Caracas ni se emiten pólizas.";
+
+/** Cloudflare Turnstile public site key. Empty = anti-bot widget disabled. */
+export const TURNSTILE_SITE_KEY: string = (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "").trim();

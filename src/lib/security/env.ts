@@ -64,4 +64,14 @@ export const rateLimit = {
   sensitiveMax: int(process.env.RL_SENSITIVE_MAX, 10),
   /** Window length in milliseconds. */
   windowMs: int(process.env.RL_WINDOW_MS, 60_000),
+  /** Policy emissions allowed per window, per client IP (stricter than sensitiveMax). */
+  emitMax: int(process.env.RL_EMIT_MAX, 3),
+  /** Global cap on policy emissions per calendar day (America/Caracas), all IPs combined. */
+  emitDailyMax: int(process.env.EMIT_DAILY_MAX, 50),
+} as const;
+
+export const turnstile = {
+  /** Cloudflare Turnstile secret. Empty = verification disabled. */
+  secretKey: (process.env.TURNSTILE_SECRET_KEY ?? "").trim(),
+  timeoutMs: int(process.env.TURNSTILE_TIMEOUT_MS, 5_000),
 } as const;

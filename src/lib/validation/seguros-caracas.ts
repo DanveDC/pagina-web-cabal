@@ -40,6 +40,41 @@ export function isValidDateDMY(s: string): boolean {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+/** Age in whole years on `today` for a valid DD/MM/YYYY date (assumes isValidDateDMY). */
+export function ageFromDMY(s: string, today: Date = new Date()): number {
+  const [dd, mm, yyyy] = s.trim().split("/").map(Number) as [number, number, number];
+  let age = today.getFullYear() - yyyy;
+  const beforeBirthday =
+    today.getMonth() + 1 < mm || (today.getMonth() + 1 === mm && today.getDate() < dd);
+  if (beforeBirthday) age -= 1;
+  return age;
+}
+
+/**
+ * Venezuelan RIF check digit (SENIAT, modulo 11).
+ * `body` is the 8-digit number; returns the expected 9th digit.
+ */
+export function rifCheckDigit(prefix: string, body: string): number | null {
+  const prefixValue: Record<string, number> = { V: 1, E: 2, J: 3, P: 4, G: 5 };
+  const pv = prefixValue[prefix.toUpperCase()];
+  if (pv === undefined || !/^\d{8}$/.test(body)) return null;
+  const weights = [3, 2, 7, 6, 5, 4, 3, 2];
+  let sum = pv * 4;
+  for (let i = 0; i < 8; i++) sum += Number(body[i]) * weights[i]!;
+  const check = 11 - (sum % 11);
+  return check >= 10 ? 0 : check;
+}
+
+/** True when a 9-digit RIF (8 digits + check digit) has a correct check digit. */
+export function isValidRif(prefix: string, digits: string): boolean {
+  if (!/^\d{9}$/.test(digits)) return false;
+  return rifCheckDigit(prefix, digits.slice(0, 8)) === Number(digits[8]);
+}
+
+/** Venezuelan area codes: landlines 2xx, mobiles 412/414/416/422/424/426 (leading 0 optional). */
+const AREA_RE = /^0?(2\d{2}|4(12|14|16|22|24|26))$/;
+export const isValidAreaCode = (v: string): boolean => AREA_RE.test(v.trim());
+
 // ── query-param validation (used by the API client before fetch) ───────────
 
 export type QueryCheck = { ok: true; params: Record<string, string> } | { ok: false; reason: string };
@@ -121,8 +156,15 @@ export function validatePersona(p: PersonaFormState): FieldErrors<PersonaField> 
 
   if (!["V", "E", "J", "G"].includes(p.nacionalidad)) e.nacionalidad = "Seleccione la nacionalidad";
 
-  if (onlyDigits(p.cedulaRif, 12).length < 4)
-    e.cedulaRif = "Ingrese la cédula o RIF (solo números, 4 a 12 dígitos)";
+  const id = onlyDigits(p.cedulaRif, 12);
+  if (juridica) {
+    if (id.length !== 9)
+      e.cedulaRif = "El RIF debe tener 9 dígitos (8 + dígito verificador)";
+    else if (!isValidRif(p.nacionalidad, id))
+      e.cedulaRif = "RIF inválido: el dígito verificador no coincide";
+  } else if (id.length < 4 || id.length > 9) {
+    e.cedulaRif = "Cédula inválida (4 a 9 dígitos, solo números)";
+  }
 
   if (!juridica && !cleanText(p.nombres, 120)) e.nombres = "Requerido";
   if (!cleanText(p.apellidosRazonSocial, 120)) e.apellidosRazonSocial = "Requerido";
@@ -132,6 +174,12 @@ export function validatePersona(p: PersonaFormState): FieldErrors<PersonaField> 
     if (!p.edoCivil) e.edoCivil = "Seleccione el estado civil";
     if (!p.feNacimiento) e.feNacimiento = "Requerida (DD/MM/YYYY)";
     else if (!isValidDateDMY(p.feNacimiento)) e.feNacimiento = "Fecha inválida — use DD/MM/YYYY";
+    else {
+      const age = ageFromDMY(p.feNacimiento);
+      if (age < 0) e.feNacimiento = "La fecha no puede ser futura";
+      else if (age < 18) e.feNacimiento = "Debe ser mayor de edad (18 años o más)";
+      else if (age > 110) e.feNacimiento = "Revise el año de nacimiento";
+    }
   } else if (p.feNacimiento && !isValidDateDMY(p.feNacimiento)) {
     e.feNacimiento = "Fecha inválida — use DD/MM/YYYY";
   }
@@ -139,10 +187,13 @@ export function validatePersona(p: PersonaFormState): FieldErrors<PersonaField> 
   if (!p.email) e.email = "Requerido";
   else if (!EMAIL_RE.test(p.email)) e.email = "Correo inválido";
 
+  if (!cleanText(p.estado, 120)) e.estado = "Requerido";
+  if (!cleanText(p.ciudad, 120)) e.ciudad = "Requerida";
   if (!cleanText(p.direccion, 120)) e.direccion = "Requerida";
 
-  if (!onlyDigits(p.cdAreaTlf, 4)) e.cdAreaTlf = "Cód. área";
-  if (onlyDigits(p.nuTlf, 12).length < 7) e.nuTlf = "Teléfono inválido (mín. 7 dígitos)";
+  if (!isValidAreaCode(onlyDigits(p.cdAreaTlf, 4)))
+    e.cdAreaTlf = "Código de área inválido (ej. 0212, 0414)";
+  if (onlyDigits(p.nuTlf, 12).length !== 7) e.nuTlf = "El número debe tener 7 dígitos";
 
   return e;
 }
