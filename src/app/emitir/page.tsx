@@ -10,6 +10,7 @@ import { DemoBanner } from "@/components/sc/demo-banner";
 import { Turnstile } from "@/components/sc/turnstile";
 import { PendingActivation } from "@/components/sc/pending-activation";
 import { SC_ENABLED, SC_AMBIENTE, SC_DEMO, TURNSTILE_SITE_KEY } from "@/lib/sc-ambiente";
+import { formatPrima, monedaLabel } from "@/lib/sc-moneda";
 import {
   classifyEmitirResult,
   describeScError,
@@ -263,11 +264,11 @@ function StepPlan({
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
                 <div>
                   <div style={{ fontWeight: 700, color: "#1f1a1d", fontSize: "15px" }}>{p.nmPropuesta}</div>
-                  <div style={{ fontSize: "12px", color: "#7a6d74", marginTop: "2px" }}>Convenio {p.cdConvenio} · {p.cdMoneda}</div>
+                  <div style={{ fontSize: "12px", color: "#7a6d74", marginTop: "2px" }}>Convenio {p.cdConvenio} · {monedaLabel(p.cdMoneda)}</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: "18px", fontWeight: 700, color: "#3A1335" }}>
-                    {p.cdMoneda} {p.mtPrima.toLocaleString("es-VE", { minimumFractionDigits: 2 })}
+                    {formatPrima(p.cdMoneda, p.mtPrima)}
                   </div>
                   <div style={{ fontSize: "11px", color: "#7a6d74" }}>prima anual</div>
                 </div>
@@ -291,7 +292,7 @@ function StepPlan({
                           cursor: "pointer",
                           transition: "all 140ms ease",
                         }}>
-                        {f.deFrPago} · {p.cdMoneda} {f.mtPrima.toLocaleString("es-VE", { minimumFractionDigits: 2 })}
+                        {f.deFrPago} · {formatPrima(p.cdMoneda, f.mtPrima)}
                       </button>
                     );
                   })}
@@ -947,7 +948,7 @@ function StepConfirmar({
           <div style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#C2A378", marginBottom: "12px" }}>Plan seleccionado</div>
           <SummaryRow label="Plan" value={plan.nmPropuesta} />
           <SummaryRow label="Frecuencia" value={freq.deFrPago} />
-          <SummaryRow label="Prima" value={`${plan.cdMoneda} ${freq.mtPrima.toLocaleString("es-VE", { minimumFractionDigits: 2 })}`} />
+          <SummaryRow label="Prima" value={formatPrima(plan.cdMoneda, freq.mtPrima)} />
         </div>
 
         {/* Inmueble */}

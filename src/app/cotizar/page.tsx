@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { segurosCaracasClient } from "@/lib/api/seguros-caracas";
 import { EnvBanner } from "@/components/sc/env-banner";
 import { SC_DEMO } from "@/lib/sc-ambiente";
+import { monedaLabel, formatPrima } from "@/lib/sc-moneda";
 import { describeScError } from "@/lib/api/emitir-result";
 import { PendingActivation } from "@/components/sc/pending-activation";
 import { PERSONA_EMPTY } from "@/types/seguros-caracas";
@@ -40,7 +41,8 @@ interface SaludForm { nAsegurados: string; edadPromedio: string; cobertura: stri
 interface PatrimonialForm { tipoRiesgo: string; valorBienes: string; direccion: string; metros: string; }
 interface OfertaDisplay {
   nombre: string; siglas: string; color: string;
-  prima_anual: number; prima_mensual: number;
+  prima_anual: number; cdMoneda: string;
+  frecuencias: { de: string; monto: number }[];
   tag: string; score: number;
   coberturas: { label: string; valor: string }[];
   destacado: boolean;
@@ -583,11 +585,12 @@ export default function CotizarPage() {
         siglas: "SC",
         color: "#3A1335",
         prima_anual: p.mtPrima,
-        prima_mensual: p.frecuencias.find(f => f.cdFrPago === "M")?.mtPrima ?? Math.round(p.mtPrima / 12),
+        cdMoneda: p.cdMoneda,
+        frecuencias: p.frecuencias.map(f => ({ de: f.deFrPago, monto: f.mtPrima })),
         tag: p.nmPropuesta,
         score: 94,
         coberturas: [
-          { label: "Moneda",       valor: p.cdMoneda },
+          { label: "Moneda",       valor: monedaLabel(p.cdMoneda) },
           { label: "N° Propuesta", valor: p.nmPropuesta },
           { label: "Tasa cambio",  valor: p.taCambio > 0 ? String(p.taCambio) : "—" },
           { label: "Convenio",     valor: String(p.cdConvenio) },
@@ -1121,7 +1124,6 @@ export default function CotizarPage() {
                               border: `1px solid ${oferta.color}20`,
                             }}>{oferta.tag}</span>
                           </div>
-                          <p style={{ fontSize: 12, color: "#4A464A", marginTop: 2 }}>Póliza anual · 1 año vigencia</p>
                         </div>
                       </div>
 
@@ -1129,12 +1131,14 @@ export default function CotizarPage() {
                         {oferta.prima_anual > 0 ? (
                           <>
                             <p style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-1px", color: "#3A1335", lineHeight: 1 }}>
-                              ${oferta.prima_anual.toLocaleString()}
+                              {formatPrima(oferta.cdMoneda, oferta.prima_anual)}
                             </p>
-                            <p style={{ fontSize: 11, color: "#7A7A8A", marginTop: 1 }}>USD / año</p>
-                            <p style={{ fontSize: 12, color: oferta.color, fontWeight: 700, marginTop: 2 }}>
-                              ~${oferta.prima_mensual} / mes
-                            </p>
+                            <p style={{ fontSize: 11, color: "#7A7A8A", marginTop: 1 }}>prima anual</p>
+                            {oferta.frecuencias.map(f => (
+                              <p key={f.de} style={{ fontSize: 12, color: oferta.color, fontWeight: 700, marginTop: 2 }}>
+                                {f.de} · {formatPrima(oferta.cdMoneda, f.monto)}
+                              </p>
+                            ))}
                           </>
                         ) : (
                           <p style={{ fontSize: 13, color: "#7A7A8A", fontStyle: "italic" }}>
