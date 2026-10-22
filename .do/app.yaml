@@ -89,4 +89,4 @@ services:
         value: "EV[REPLACE_IN_DASHBOARD]"
       - key: ALLOWED_ORIGINS
         scope: RUN_TIME
-        value: https://cabalasesores.com,https://www.cabalasesores.com
+        value: https://monkfish-app-nf3lg.ondigitalocean.app,https://cabalasesores.com,https://www.cabalasesores.com
