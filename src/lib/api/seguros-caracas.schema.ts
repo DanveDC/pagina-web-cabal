@@ -80,9 +80,11 @@ export const suscribirBody = z
     pedido: z
       .object({
         cdOpcion: z.number().int(),
-        cdMoneda: z.string().trim().max(4),
-        cdMonedaPago: z.string().trim().max(4).optional(),
-        frPago: z.string().trim().max(4),
+        // Codes confirmed by Seguros Caracas: moneda 01 Bs. / 02 USD;
+        // frecuencia A anual, S semestral, C cuatrimestral, T trimestral.
+        cdMoneda: z.enum(["01", "02"]),
+        cdMonedaPago: z.enum(["01", "02"]).optional(),
+        frPago: z.enum(["A", "S", "C", "T"]),
         hogar,
         asegurado: persona,
         tomador: persona,

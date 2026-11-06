@@ -10,7 +10,7 @@ import { DemoBanner } from "@/components/sc/demo-banner";
 import { Turnstile } from "@/components/sc/turnstile";
 import { PendingActivation } from "@/components/sc/pending-activation";
 import { SC_ENABLED, SC_AMBIENTE, SC_DEMO, TURNSTILE_SITE_KEY } from "@/lib/sc-ambiente";
-import { formatPrima, monedaLabel } from "@/lib/sc-moneda";
+import { formatPrima, monedaLabel, frecuenciaLabel } from "@/lib/sc-moneda";
 import {
   classifyEmitirResult,
   describeScError,
@@ -292,7 +292,7 @@ function StepPlan({
                           cursor: "pointer",
                           transition: "all 140ms ease",
                         }}>
-                        {f.deFrPago} · {formatPrima(p.cdMoneda, f.mtPrima)}
+                        {frecuenciaLabel(f.cdFrPago, f.deFrPago)} · {formatPrima(p.cdMoneda, f.mtPrima)}
                       </button>
                     );
                   })}
@@ -947,7 +947,7 @@ function StepConfirmar({
         <div style={{ backgroundColor: "#f5ebef", borderRadius: "8px", padding: "20px" }}>
           <div style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#C2A378", marginBottom: "12px" }}>Plan seleccionado</div>
           <SummaryRow label="Plan" value={plan.nmPropuesta} />
-          <SummaryRow label="Frecuencia" value={freq.deFrPago} />
+          <SummaryRow label="Frecuencia" value={frecuenciaLabel(freq.cdFrPago, freq.deFrPago)} />
           <SummaryRow label="Prima" value={formatPrima(plan.cdMoneda, freq.mtPrima)} />
         </div>
 

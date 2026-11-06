@@ -149,7 +149,7 @@ const validForm = (): HogarFormState => ({
 });
 
 test("buildSuscribirPayload returns a schema-valid payload for a good form", () => {
-  const r = buildSuscribirPayload(validForm(), { cdOpcion: 1, cdMoneda: "USD", frPago: "A" });
+  const r = buildSuscribirPayload(validForm(), { cdOpcion: 1, cdMoneda: "02", frPago: "A" });
   assert.equal(r.ok, true);
   if (r.ok) {
     assert.equal(r.payload.pedido.asegurado.cedulaRif, 12345678); // coerced to number
@@ -163,7 +163,7 @@ test("buildSuscribirPayload rejects an incomplete form with field errors", () =>
   const bad = validForm();
   bad.asegurado.cedulaRif = "12"; // too short
   bad.inmueble.cdSector = "";
-  const r = buildSuscribirPayload(bad, { cdOpcion: 1, cdMoneda: "USD", frPago: "A" });
+  const r = buildSuscribirPayload(bad, { cdOpcion: 1, cdMoneda: "02", frPago: "A" });
   assert.equal(r.ok, false);
   if (!r.ok) {
     assert.ok(r.errors.asegurado.cedulaRif);
@@ -176,7 +176,7 @@ test("buildSuscribirPayload sanitises dirty input before building", () => {
   dirty.asegurado.cedulaRif = "V-12.345.678";
   dirty.asegurado.nombres = "  Ana   María  ";
   dirty.inmueble.deDireccion1 = "x".repeat(80);
-  const r = buildSuscribirPayload(dirty, { cdOpcion: 1, cdMoneda: "USD", frPago: "A" });
+  const r = buildSuscribirPayload(dirty, { cdOpcion: 1, cdMoneda: "02", frPago: "A" });
   assert.equal(r.ok, true);
   if (r.ok) {
     assert.equal(r.payload.pedido.asegurado.cedulaRif, 12345678);
@@ -223,4 +223,14 @@ test("isValidAreaCode and ageFromDMY", () => {
   for (const bad of ["", "12", "0999", "0415", "5551"]) assert.ok(!isValidAreaCode(bad), bad);
   assert.equal(ageFromDMY("15/06/2000", new Date(2026, 5, 14)), 25);
   assert.equal(ageFromDMY("15/06/2000", new Date(2026, 5, 15)), 26);
+});
+
+test("suscribir only accepts the moneda/frecuencia codes defined by SC", () => {
+  for (const [cdMoneda, frPago] of [["03", "A"], ["02", "M"], ["USD", "A"]] as const) {
+    const r = buildSuscribirPayload(validForm(), { cdOpcion: 1, cdMoneda, frPago });
+    assert.equal(r.ok, false, `${cdMoneda}/${frPago}`);
+  }
+  for (const frPago of ["A", "S", "C", "T"]) {
+    assert.ok(buildSuscribirPayload(validForm(), { cdOpcion: 1, cdMoneda: "01", frPago }).ok, frPago);
+  }
 });

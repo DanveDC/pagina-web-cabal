@@ -19,3 +19,19 @@ export function formatPrima(cdMoneda: string, monto: number): string {
   const label = monedaLabel(cdMoneda);
   return label ? `${label} ${amount}` : amount;
 }
+
+// Payment frequencies confirmed by Seguros Caracas (22/10/2026).
+export const FRECUENCIAS: Record<string, string> = {
+  A: "Anual",
+  S: "Semestral",
+  C: "Cuatrimestral",
+  T: "Trimestral",
+};
+export const CODIGOS_MONEDA = Object.keys(MONEDAS);
+export const CODIGOS_FRECUENCIA = Object.keys(FRECUENCIAS);
+
+/** Label for a frPago / cdFrPago code; falls back to SC's own description. */
+export function frecuenciaLabel(cdFrPago: string, deFrPago?: string): string {
+  const code = String(cdFrPago ?? "").trim().toUpperCase();
+  return FRECUENCIAS[code] ?? (deFrPago?.trim() || (code ? `Frecuencia ${code}` : ""));
+}
