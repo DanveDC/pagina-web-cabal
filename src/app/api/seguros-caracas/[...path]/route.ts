@@ -16,6 +16,7 @@
 
 import { NextResponse } from "next/server";
 import { scAuthHeaders, isJsonContentType } from "@/lib/api/sc-auth-headers";
+import { scConfigProblems, logScConfigProblems } from "@/lib/api/sc-config-report";
 import { createHash, timingSafeEqual, randomUUID } from "node:crypto";
 import { segurosCaracas, rateLimit as rlConfig } from "@/lib/security/env";
 import { rateLimit, clientIp } from "@/lib/security/rate-limit";
@@ -132,6 +133,16 @@ async function callUpstream(
 // ─── gate shared by GET and POST ───────────────────────────────────────────
 
 function gate(req: Request, segment: Segment, method: "GET" | "POST"): NextResponse | null {
+  const problems = scConfigProblems({
+    proxyEnabledRaw: process.env.SC_PROXY_ENABLED,
+    baseUrl: segurosCaracas.baseUrl,
+    productor: segurosCaracas.productor,
+    convenio: segurosCaracas.convenio,
+    apiKey: segurosCaracas.apiKey,
+    secretId: segurosCaracas.secretId,
+    proxyToken: segurosCaracas.proxyToken,
+  });
+  logScConfigProblems(problems, `/api/seguros-caracas/${segment}`);
   if (!segurosCaracas.enabled || !segurosCaracas.baseUrl) return fail(503, "service_disabled");
 
   const sensitive = SENSITIVE.includes(segment);
