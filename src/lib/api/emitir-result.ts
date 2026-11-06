@@ -29,6 +29,8 @@ const MESSAGES: Record<string, string> = {
     "El servicio de emisión no está disponible por el momento. Por favor intente más tarde.",
   rate_limited:
     "Ha realizado demasiadas solicitudes en poco tiempo. Por favor espere un momento e intente nuevamente.",
+  upstream_unauthorized:
+    "Seguros Caracas rechazó las credenciales de acceso del aplicativo. Por favor contacte a Cabal.",
   daily_cap_reached:
     "El servicio de emisión alcanzó su límite diario. Por favor intente nuevamente mañana.",
   captcha_failed:

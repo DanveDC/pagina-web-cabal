@@ -49,6 +49,11 @@ export const segurosCaracas = {
   convenio: process.env.SC_CONVENIO ?? "",
   /** Shared secret required for sensitive operations (suscribir / consultarCliente). */
   proxyToken: process.env.SC_PROXY_TOKEN ?? "",
+  /** SC API credentials, sent as x-api-key / x-secret-id on every upstream call. */
+  apiKey: process.env.SC_API_KEY ?? "",
+  secretId: process.env.SC_SECRET_ID ?? process.env.SC_API_SECRET ?? "",
+  /** cdUsuario for suscribir. Defaults to the productor code until SC specifies it. */
+  usuario: (process.env.SC_USUARIO ?? "").trim(),
   /** Master switch. When false the proxy returns 503 for every route. */
   enabled: bool(process.env.SC_PROXY_ENABLED, !isProd),
   /** Upstream request timeout. */

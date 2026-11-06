@@ -83,6 +83,15 @@ services:
         scope: RUN_TIME
         type: SECRET
         value: "EV[REPLACE_IN_DASHBOARD]"
+      # SC API credentials, sent as x-api-key / x-secret-id (set in the dashboard).
+      - key: SC_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+        value: "EV[REPLACE_IN_DASHBOARD]"
+      - key: SC_SECRET_ID
+        scope: RUN_TIME
+        type: SECRET
+        value: "EV[REPLACE_IN_DASHBOARD]"
       - key: SC_PROXY_TOKEN
         scope: RUN_TIME
         type: SECRET

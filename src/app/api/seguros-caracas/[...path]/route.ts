@@ -15,6 +15,7 @@
 //   9. Sanitised errors (details are logged, never returned)
 
 import { NextResponse } from "next/server";
+import { scAuthHeaders, isJsonContentType } from "@/lib/api/sc-auth-headers";
 import { createHash, timingSafeEqual, randomUUID } from "node:crypto";
 import { segurosCaracas, rateLimit as rlConfig } from "@/lib/security/env";
 import { rateLimit, clientIp } from "@/lib/security/rate-limit";
@@ -74,6 +75,9 @@ async function callUpstream(
   path: string,
   init: RequestInit & { rawBody?: string }
 ): Promise<NextResponse> {
+  const auth = scAuthHeaders({ apiKey: segurosCaracas.apiKey, secretId: segurosCaracas.secretId });
+  if (!auth) return fail(503, "credentials_not_configured");
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), segurosCaracas.timeoutMs);
   const url = `${segurosCaracas.baseUrl}${path}`;
@@ -81,13 +85,21 @@ async function callUpstream(
   try {
     const upstream = await fetch(url, {
       ...init,
+      headers: { Accept: "application/json", ...(init.headers as Record<string, string> | undefined), ...auth },
       body: init.rawBody,
       signal: controller.signal,
       redirect: "error",
     });
 
+    // SC credentials rejected (x-api-key / x-secret-id). Never echo SC's detail
+    // to the browser; log only the status (no headers, no credential values).
+    if (upstream.status === 401) {
+      console.error(`[sc-proxy] upstream 401 (api key / secret id rejected) for ${path.split("?")[0]}`);
+      return fail(502, "upstream_unauthorized");
+    }
+
     const contentType = upstream.headers.get("content-type") ?? "";
-    if (!contentType.includes("application/json")) {
+    if (!isJsonContentType(contentType)) {
       console.error(`[sc-proxy] non-JSON upstream (${upstream.status} ${contentType}) for ${path}`);
       return fail(502, "upstream_bad_response");
     }
@@ -237,7 +249,7 @@ export async function POST(
       ...parsed.data.pedido,
       cdProductor: segurosCaracas.productor,
       cdConvenio: segurosCaracas.convenio,
-      cdUsuario: segurosCaracas.productor,
+      cdUsuario: segurosCaracas.usuario || segurosCaracas.productor,
     },
   };
 
