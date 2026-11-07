@@ -101,7 +101,17 @@ async function callUpstream(
 
     const contentType = upstream.headers.get("content-type") ?? "";
     if (!isJsonContentType(contentType)) {
-      console.error(`[sc-proxy] non-JSON upstream (${upstream.status} ${contentType}) for ${path}`);
+      // A short, tag-stripped excerpt of SC's own error page helps tell "service
+      // down" from "IP not allowed". It comes from SC, never contains our headers.
+      let excerpt = "";
+      try {
+        const html = (await upstream.text()).slice(0, 4000);
+        const title = /<title[^>]*>([^<]{0,160})<\/title>/i.exec(html)?.[1] ?? "";
+        const text = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gi, " ")
+          .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 200);
+        excerpt = ` — title: "${title.trim()}" text: "${text}"`;
+      } catch { /* ignore */ }
+      console.error(`[sc-proxy] non-JSON upstream (${upstream.status} ${contentType}) for ${path.split("?")[0]}${excerpt}`);
       return fail(502, "upstream_bad_response");
     }
 
