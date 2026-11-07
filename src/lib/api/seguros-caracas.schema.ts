@@ -11,7 +11,7 @@ const code = z
   .trim()
   .min(1)
   .max(24)
-  .regex(/^[A-Za-z0-9]+$/, "invalid code format");
+  .regex(/^-?[A-Za-z0-9]+$/, "invalid code format"); // "-1" = SIN CIUDAD
 
 const shortText = z.string().trim().max(120);
 const address = z.string().trim().max(50);

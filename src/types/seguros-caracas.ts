@@ -219,6 +219,8 @@ export function toSuscribirPersona(p: PersonaFormState): SuscribirPersona {
       ? "X"
       : ["M", "F"].includes(p.sexo) ? p.sexo : "") as Sexo,
     cedulaRif: digits ? Number(digits) : 0,
+    // Spec example sends the area code without the leading 0 ("212").
+    cdAreaTlf: p.cdAreaTlf.replace(/\D/g, "").replace(/^0+/, "").slice(0, 3),
   };
 }
 

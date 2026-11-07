@@ -11,6 +11,10 @@ import { verifyTurnstile } from "@/lib/security/turnstile";
 import { isAllowedOrigin } from "@/lib/security/origin";
 import { classifyEmitirResult } from "@/lib/api/emitir-result";
 
+// Internal hop to our own SC proxy over loopback (same container): never via the
+// public edge, which rewrites 5xx bodies and would route through the egress IPs.
+const SELF = `http://127.0.0.1:${process.env.PORT ?? 3000}`;
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -78,10 +82,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Forward to our own SC proxy with the Bearer token injected server-side.
-  const origin = req.nextUrl.origin;
   let res: Response;
   try {
-    res = await fetch(`${origin}/api/seguros-caracas/suscribir`, {
+    res = await fetch(`${SELF}/api/seguros-caracas/suscribir`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -116,6 +119,6 @@ export async function POST(req: NextRequest) {
           }
         : {}),
     },
-    { status: result.status }
+    { status: result.status, headers: { "X-SC-Error": result.code } }
   );
 }

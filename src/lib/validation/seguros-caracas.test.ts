@@ -125,7 +125,7 @@ test("validateInmueble requires the key selects and address", () => {
     cdSector: "", deSector: "", cdPostal: "", x: "", y: "",
     cdIndole: "", deInmueble: "", deCalle: "", deDireccion1: "", deDireccion2: "",
   });
-  assert.ok(e.cdEstado && e.cdCiudad && e.cdSector && e.cdIndole && e.deInmueble && e.deDireccion1);
+  assert.ok(e.cdEstado && e.cdCiudad && e.cdSector && e.cdIndole && e.deInmueble && e.deCalle);
 });
 
 const validForm = (): HogarFormState => ({
@@ -232,5 +232,36 @@ test("suscribir only accepts the moneda/frecuencia codes defined by SC", () => {
   }
   for (const frPago of ["A", "S", "C", "T"]) {
     assert.ok(buildSuscribirPayload(validForm(), { cdOpcion: 1, cdMoneda: "01", frPago }).ok, frPago);
+  }
+});
+
+test("SIN CIUDAD code -1 survives sanitising and the wire schema", async () => {
+  const { cleanCode } = await import("./seguros-caracas");
+  assert.equal(cleanCode("-1"), "-1");
+  assert.equal(cleanCode(" 13351 "), "13351");
+  assert.equal(cleanCode("1-2"), "12");
+  const f = validForm();
+  f.inmueble.cdCiudad = "-1"; f.inmueble.deCiudad = "SIN CIUDAD";
+  const r = buildSuscribirPayload(f, { cdOpcion: 1, cdMoneda: "02", frPago: "A" });
+  assert.ok(r.ok);
+  if (r.ok) {
+    assert.equal(r.payload.pedido.hogar.cdCiudad, "-1");
+    assert.ok(!r.payload.pedido.hogar.deDireccion1.includes("SIN CIUDAD"));
+  }
+});
+
+test("direccion is composed and split at 50 like the spec example", async () => {
+  const { composeDireccion } = await import("./seguros-caracas");
+  const d = composeDireccion({ deCalle: "CALLE", deInmueble: "INMUEBLE", deSector: "MONTAHUELA", deCiudad: "CARACAS", deEstado: "DISTRITO CAPITAL" });
+  assert.equal(d.deDireccion1, "CALLE, INMUEBLE, MONTAHUELA, CARACAS, DISTRITO CAP");
+  assert.equal(d.deDireccion2, "ITAL");
+});
+
+test("payload: cdMonedaPago = cdMoneda and area code without leading 0", () => {
+  const r = buildSuscribirPayload(validForm(), { cdOpcion: 1, cdMoneda: "02", frPago: "A" });
+  assert.ok(r.ok);
+  if (r.ok) {
+    assert.equal(r.payload.pedido.cdMonedaPago, "02");
+    assert.match(r.payload.pedido.asegurado.cdAreaTlf, /^[1-9]\d{2}$/);
   }
 });

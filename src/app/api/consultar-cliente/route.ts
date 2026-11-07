@@ -9,6 +9,10 @@ import { rateLimit, clientIp } from "@/lib/security/rate-limit";
 import { rateLimit as rlConfig } from "@/lib/security/env";
 import { isAllowedOrigin } from "@/lib/security/origin";
 
+// Internal hop to our own SC proxy over loopback (same container): never via the
+// public edge, which rewrites 5xx bodies and would route through the egress IPs.
+const SELF = `http://127.0.0.1:${process.env.PORT ?? 3000}`;
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -47,17 +51,26 @@ export async function GET(req: NextRequest) {
 
   // Forward to our own SC proxy with the Bearer token injected server-side.
   const params = new URL(req.url).searchParams.toString();
-  const res = await fetch(
-    `${req.nextUrl.origin}/api/seguros-caracas/cliente${params ? `?${params}` : ""}`,
-    {
+  let res: Response;
+  try {
+    res = await fetch(`${SELF}/api/seguros-caracas/cliente${params ? `?${params}` : ""}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-    }
-  );
+    });
+  } catch {
+    return NextResponse.json({ error: "upstream_unreachable" }, { status: 502, headers: { "X-SC-Error": "upstream_unreachable" } });
+  }
 
-  const data = await res.json();
+  let data: unknown;
+  try {
+    data = await res.json();
+  } catch {
+    const code = res.headers.get("x-sc-error") ?? "upstream_bad_response";
+    return NextResponse.json({ error: code }, { status: 502, headers: { "X-SC-Error": code } });
+  }
+  const scError = res.headers.get("x-sc-error");
   return NextResponse.json(data, {
     status: res.status,
-    headers: { "Cache-Control": "no-store" },
+    headers: { "Cache-Control": "no-store", ...(scError ? { "X-SC-Error": scError } : {}) },
   });
 }

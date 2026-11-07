@@ -21,8 +21,29 @@ export const cleanText = (v: string, max = 120): string =>
   v.replace(/\s+/g, " ").trim().slice(0, max);
 
 /** SC catalog codes are alphanumeric only. */
-export const cleanCode = (v: string, max = 24): string =>
-  v.trim().replace(/[^A-Za-z0-9]+/g, "").slice(0, max);
+/** SC codes: alphanumeric, optionally negative ("-1" = SIN CIUDAD in consultarCiudades). */
+export const cleanCode = (v: string, max = 24): string => {
+  const t = v.trim();
+  const body = t.replace(/[^A-Za-z0-9]+/g, "");
+  return ((t.startsWith("-") && body ? "-" : "") + body).slice(0, max);
+};
+
+/**
+ * deDireccion1/2 as in the spec example: "CALLE, INMUEBLE, SECTOR, CIUDAD, ESTADO"
+ * split into two chunks of at most 50 characters.
+ */
+export function composeDireccion(i: {
+  deCalle: string; deInmueble: string; deSector: string; deCiudad: string; deEstado: string;
+}): { deDireccion1: string; deDireccion2: string; full: string; truncated: boolean } {
+  const parts = [i.deCalle, i.deInmueble, i.deSector, i.deCiudad, i.deEstado]
+    .map((x) => x.replace(/\s+/g, " ").trim())
+    .filter((x) => x && x.toUpperCase() !== "SIN CIUDAD");
+  const full = parts.join(", ");
+  return { deDireccion1: full.slice(0, 50), deDireccion2: full.slice(50, 100), full, truncated: full.length > 100 };
+}
+
+/** cdAreaTlf as in the spec example ("212"): digits, without the leading 0. */
+export const areaCodeForSc = (v: string): string => v.replace(/\D/g, "").replace(/^0+/, "").slice(0, 3);
 
 export const cleanEmail = (v: string): string => v.trim().replace(/\s+/g, "").slice(0, 120);
 
@@ -204,10 +225,8 @@ export function validateInmueble(i: HogarFormState["inmueble"]): FieldErrors<Inm
   if (!i.cdCiudad) e.cdCiudad = "Seleccione la ciudad";
   if (!i.cdSector) e.cdSector = "Seleccione el sector";
   if (!i.cdIndole) e.cdIndole = "Seleccione la índole del inmueble";
-  if (!cleanText(i.deInmueble, 120)) e.deInmueble = "Requerido";
+  if (!cleanText(i.deInmueble, 120)) e.deInmueble = "Requerido (edificio o casa, piso, apartamento)";
   if (!cleanText(i.deCalle, 120)) e.deCalle = "Requerida";
-  // deDireccion1/2 are clamped to 50 chars at input time (sanitizeInmuebleField).
-  if (!i.deDireccion1.trim()) e.deDireccion1 = "Requerida (máx. 50)";
   return e;
 }
 
@@ -251,6 +270,8 @@ export function buildSuscribirPayload(
   const payload: SuscribirRequest = {
     pedido: {
       ...pedido,
+      // Spec lists cdMonedaPago among the required fields: same currency as the plan.
+      cdMonedaPago: pedido.cdMonedaPago ?? pedido.cdMoneda,
       hogar: {
         deEstado: inmueble.deEstado,
         cdEstado: inmueble.cdEstado,
@@ -263,8 +284,9 @@ export function buildSuscribirPayload(
         deCalle: inmueble.deCalle,
         x: inmueble.x,
         y: inmueble.y,
-        deDireccion1: inmueble.deDireccion1,
-        deDireccion2: inmueble.deDireccion2,
+        // Composed as in the spec example (calle, inmueble, sector, ciudad, estado).
+        deDireccion1: composeDireccion(inmueble).deDireccion1,
+        deDireccion2: composeDireccion(inmueble).deDireccion2,
         cdIndole: inmueble.cdIndole,
       },
       asegurado: toSuscribirPersona(asegurado),

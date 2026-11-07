@@ -48,7 +48,7 @@ const MESSAGES: Record<string, string> = {
   upstream_timeout:
     "Seguros Caracas tardó demasiado en responder. Por favor intente nuevamente.",
   upstream_bad_response:
-    "Seguros Caracas devolvió una respuesta inesperada. Por favor intente nuevamente.",
+    "El servicio de Seguros Caracas no está respondiendo correctamente en este momento. Por favor intente nuevamente en unos minutos.",
   upstream_response_too_large:
     "Seguros Caracas devolvió una respuesta demasiado grande para procesar.",
   invalid_parameters:
@@ -192,4 +192,21 @@ export function formatPolizaText(
   ];
   if (ambiente === "pruebas") lines.push("Ambiente: PRUEBAS (sin validez comercial)");
   return lines.join("\n");
+}
+
+/**
+ * Message for a catalog/lookup result that did not bring the expected data.
+ * Prefers Seguros Caracas' own deError (e.g. "IP No autorizada"), sanitised.
+ */
+export function scResultMessage(
+  r: { ok: true; data: unknown } | { ok: false; error: string; deError?: string }
+): string {
+  const de = r.ok
+    ? (r.data as { deError?: unknown } | null)?.deError
+    : r.deError;
+  if (typeof de === "string" && de.trim()) {
+    const clean = de.replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 300);
+    return `Seguros Caracas respondió: ${clean}`;
+  }
+  return describeScError(r.ok ? "upstream_bad_response" : r.error);
 }

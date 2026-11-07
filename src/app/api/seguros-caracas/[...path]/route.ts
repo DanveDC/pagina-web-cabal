@@ -51,6 +51,8 @@ function fail(status: number, code: string, extraHeaders?: Record<string, string
       headers: {
         "Cache-Control": "no-store",
         "X-Content-Type-Options": "nosniff",
+        // DigitalOcean replaces 5xx bodies with its own page; keep the code visible.
+        "X-SC-Error": code,
         ...extraHeaders,
       },
     }
@@ -74,7 +76,7 @@ function isSegment(v: string | undefined): v is Segment {
 
 async function callUpstream(
   path: string,
-  init: RequestInit & { rawBody?: string }
+  init: RequestInit & { rawBody?: string; cacheable?: boolean }
 ): Promise<NextResponse> {
   const auth = scAuthHeaders({ apiKey: segurosCaracas.apiKey, secretId: segurosCaracas.secretId });
   if (!auth) return fail(503, "credentials_not_configured");
@@ -127,9 +129,20 @@ async function callUpstream(
       return fail(502, "upstream_bad_response");
     }
 
+    // Cache catalog answers only when SC confirms success (cdError 0); never
+    // cache "IP No autorizada" or any other cdError for minutes in the browser.
+    const okBody =
+      upstream.status === 200 &&
+      typeof data === "object" && data !== null &&
+      (data as { cdError?: unknown }).cdError === 0;
     return NextResponse.json(data, {
       status: upstream.status >= 500 ? 502 : upstream.status,
-      headers: { "X-Content-Type-Options": "nosniff" },
+      headers: {
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": init.cacheable && okBody
+          ? "private, max-age=300, stale-while-revalidate=600"
+          : "no-store",
+      },
     });
   } catch (err) {
     const aborted = err instanceof Error && err.name === "AbortError";
@@ -216,14 +229,10 @@ export async function GET(
   }
 
   const qs = sp.toString();
-  const res = await callUpstream(`${ROUTE_MAP[segment]}${qs ? `?${qs}` : ""}`, { method: "GET" });
-
-  if (CACHEABLE.includes(segment)) {
-    res.headers.set("Cache-Control", "private, max-age=300, stale-while-revalidate=600");
-  } else {
-    res.headers.set("Cache-Control", "no-store");
-  }
-  return res;
+  return callUpstream(`${ROUTE_MAP[segment]}${qs ? `?${qs}` : ""}`, {
+    method: "GET",
+    cacheable: CACHEABLE.includes(segment),
+  });
 }
 
 // ─── POST (suscribir — creates a policy) ───────────────────────────────────

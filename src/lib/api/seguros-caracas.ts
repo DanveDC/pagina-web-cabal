@@ -23,7 +23,7 @@ const BASE = "/api/seguros-caracas";
 const CLIENT_TIMEOUT_MS = 15_000;
 
 type Ok<T> = { ok: true; data: T };
-type Err = { ok: false; error: string; status: number };
+type Err = { ok: false; error: string; status: number; deError?: string };
 export type Result<T> = Ok<T> | Err;
 
 function errResult(status: number, error: string): Err {
@@ -58,11 +58,17 @@ async function request<T>(
     }
 
     if (!res.ok) {
+      // DigitalOcean replaces 5xx bodies with its own HTML page: the proxy also
+      // sends the code in X-SC-Error so it survives.
       const code =
         body && typeof body === "object" && "error" in body
           ? String((body as { error: unknown }).error)
-          : `http_${res.status}`;
-      return errResult(res.status, code);
+          : res.headers.get("x-sc-error") ?? `http_${res.status}`;
+      const deError =
+        body && typeof body === "object" && typeof (body as { deError?: unknown }).deError === "string"
+          ? (body as { deError: string }).deError
+          : undefined;
+      return { ...errResult(res.status, code), ...(deError ? { deError } : {}) };
     }
 
     return { ok: true, data: body as T };

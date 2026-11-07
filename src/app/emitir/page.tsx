@@ -14,11 +14,13 @@ import { formatPrima, monedaLabel, frecuenciaLabel } from "@/lib/sc-moneda";
 import {
   classifyEmitirResult,
   describeScError,
+  scResultMessage,
   formatCaracasDateTime,
   formatPolizaText,
   type Poliza,
 } from "@/lib/api/emitir-result";
 import {
+  composeDireccion,
   buildSuscribirPayload,
   validatePersona,
   validateInmueble,
@@ -219,15 +221,16 @@ function StepPlan({
   const [propuestas, setPropuestas] = useState<Propuesta[]>([]);
   const [selected, setSelected] = useState<{ plan: Propuesta; freq: FrecuenciaPago } | null>(null);
 
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     scClient.getPropuestas()
       .then((r) => {
         if (r.ok && "propuestas" in r.data) setPropuestas((r.data as PropuestasOk).propuestas);
-        else setError(r.ok ? describeScError("upstream_bad_response") : describeScError(r.error));
+        else setError("No se pudieron cargar los planes. " + scResultMessage(r));
       })
       .catch(() => setError("Error al conectar con Seguros Caracas."))
       .finally(() => setLoading(false));
-  }, []);
+  }, [attempt]);
 
   if (loading) return (
     <div style={{ textAlign: "center", padding: "60px 0", color: "#7a6d74" }}>
@@ -237,7 +240,13 @@ function StepPlan({
 
   if (error) return (
     <div style={{ padding: "24px", backgroundColor: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", color: "#DC2626", fontSize: "14px" }}>
-      {error}
+      <div>{error}</div>
+      <button
+        onClick={() => { setError(""); setLoading(true); setAttempt((n) => n + 1); }}
+        style={{ marginTop: "14px", padding: "8px 18px", borderRadius: "4px", fontSize: "13px", fontWeight: 600, backgroundColor: "#3A1335", color: "#fff", border: "none", cursor: "pointer" }}
+      >
+        Reintentar
+      </button>
     </div>
   );
 
@@ -349,7 +358,7 @@ function StepInmueble({
       if (r.ok && "estados" in r.data) {
         setListas(r.data as ListasInicialesOk);
       } else {
-        setCatalogError(r.ok ? describeScError("upstream_bad_response") : describeScError(r.error));
+        setCatalogError("No se pudieron cargar los catálogos. " + scResultMessage(r));
         setRetry(() => () => {
           setLoadingListas(true);
           setCatalogError("");
@@ -372,7 +381,7 @@ function StepInmueble({
     if (r.ok && "ciudades" in r.data) {
       setCiudades((r.data as CiudadesOk).ciudades);
     } else {
-      setCatalogError("No se pudieron cargar las ciudades. " + (r.ok ? describeScError("upstream_bad_response") : describeScError(r.error)));
+      setCatalogError("No se pudieron cargar las ciudades. " + scResultMessage(r));
       setRetry(() => () => { void handleEstado(cdEstado); });
     }
     setLoadingCiudades(false);
@@ -389,7 +398,7 @@ function StepInmueble({
     if (r.ok && "sectores" in r.data) {
       setSectores((r.data as SectoresOk).sectores);
     } else {
-      setCatalogError("No se pudieron cargar los sectores. " + (r.ok ? describeScError("upstream_bad_response") : describeScError(r.error)));
+      setCatalogError("No se pudieron cargar los sectores. " + scResultMessage(r));
       setRetry(() => () => { void handleCiudad(cdCiudad); });
     }
     setLoadingSectores(false);
@@ -454,7 +463,7 @@ function StepInmueble({
         </Field>
 
         <Field label="Índole del inmueble" error={errors.cdIndole} required>
-          <SelectInput value={form.cdIndole} onChange={(v) => { const found = indoleOpts.find((o) => o.value === v); setForm((f) => ({ ...f, cdIndole: v, deInmueble: found?.label ?? "" })); }} options={indoleOpts} placeholder="— Seleccione —" disabled={!listas} />
+          <SelectInput value={form.cdIndole} onChange={(v) => setForm((f) => ({ ...f, cdIndole: v }))} options={indoleOpts} placeholder="— Seleccione —" disabled={!listas} />
         </Field>
 
         <Field label="Calle / Avenida" error={errors.deCalle} required>
@@ -466,15 +475,23 @@ function StepInmueble({
         </Field>
       </div>
 
-      <Field label="Dirección línea 1 (máx. 50 caracteres)" error={errors.deDireccion1} required>
-        <TextInput value={form.deDireccion1} onChange={(v) => set("deDireccion1", v)} placeholder="Edificio / Casa / Piso / Apartamento" />
-        <div style={{ fontSize: "11px", color: "#80747b", marginTop: "3px" }}>{form.deDireccion1.length}/50 caracteres</div>
+      <Field label="Inmueble (edificio o casa, piso, apartamento)" error={errors.deInmueble} required>
+        <TextInput value={form.deInmueble} onChange={(v) => set("deInmueble", v)} placeholder="Edif. Los Pinos, Piso 4, Apto 4-B" />
       </Field>
 
-      <Field label="Dirección línea 2 (máx. 50 caracteres)">
-        <TextInput value={form.deDireccion2} onChange={(v) => set("deDireccion2", v)} placeholder="Referencia adicional (opcional)" />
-        <div style={{ fontSize: "11px", color: "#80747b", marginTop: "3px" }}>{form.deDireccion2.length}/50 caracteres</div>
-      </Field>
+      {(() => {
+        const d = composeDireccion(form);
+        return d.full ? (
+          <div style={{ fontSize: "12px", color: "#4e444b", backgroundColor: "#f5ebef", borderRadius: "4px", padding: "10px 12px", marginBottom: "16px", lineHeight: 1.5 }}>
+            <strong>Dirección que se enviará:</strong> {d.full}
+            <div style={{ color: d.truncated ? "#B45309" : "#80747b", marginTop: "2px" }}>
+              {d.truncated
+                ? `Se enviarán los primeros 100 caracteres (dos líneas de 50). Estado, ciudad y sector también se envían por separado.`
+                : `${d.full.length}/100 caracteres (se envía en dos líneas de 50)`}
+            </div>
+          </div>
+        ) : null;
+      })()}
 
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
         <button onClick={onBack} style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "11px 20px", borderRadius: "4px", fontSize: "14px", fontWeight: 600, backgroundColor: "transparent", color: "#3A1335", border: "1.5px solid #3A1335", cursor: "pointer" }}>
@@ -516,7 +533,9 @@ function PersonaForm({
         onChange("sexo", c.sexo);
         onChange("edoCivil", c.edoCivil);
       } else {
-        setLookupError("No se encontró el cliente en Seguros Caracas.");
+        // Not found vs. service error: show SC's own message when it sends one.
+        const de = r.ok ? (r.data as { deError?: string }).deError : r.deError;
+        setLookupError(de || !r.ok ? scResultMessage(r) : "No se encontró el cliente en Seguros Caracas.");
       }
     } catch {
       setLookupError("Error al consultar el cliente.");
@@ -778,7 +797,9 @@ function StepConfirmar({
         setEmittedAt(new Date());
         setPoliza(outcome.poliza);
       } else if (!outcome.ok) {
-        setError(outcome.deError || describeScError(outcome.code));
+        // A 5xx body may be replaced by DigitalOcean: the code also travels in X-SC-Error.
+        const hdr = data === undefined ? res.headers.get("x-sc-error") : null;
+        setError(outcome.deError || describeScError(hdr ?? outcome.code));
       } else {
         setError(describeScError("invalid_response"));
       }
@@ -957,7 +978,7 @@ function StepConfirmar({
           <SummaryRow label="Estado" value={inmueble.deEstado} />
           <SummaryRow label="Ciudad" value={inmueble.deCiudad} />
           <SummaryRow label="Sector" value={inmueble.deSector} />
-          <SummaryRow label="Dirección" value={inmueble.deDireccion1} />
+          <SummaryRow label="Dirección" value={composeDireccion(inmueble).full} />
         </div>
 
         {/* Asegurado */}
