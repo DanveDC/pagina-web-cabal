@@ -7,6 +7,7 @@ import { segurosCaracasDemoClient, DEMO_CLIENTE_CEDULA } from "@/lib/api/seguros
 import { buildUpstreamPreview } from "@/lib/api/suscribir-preview";
 import { EnvBanner } from "@/components/sc/env-banner";
 import { DemoBanner } from "@/components/sc/demo-banner";
+import { normalizeCliente } from "@/lib/api/sc-cliente";
 import { Turnstile } from "@/components/sc/turnstile";
 import { PendingActivation } from "@/components/sc/pending-activation";
 import { SC_ENABLED, SC_AMBIENTE, SC_DEMO, TURNSTILE_SITE_KEY } from "@/lib/sc-ambiente";
@@ -39,7 +40,6 @@ import type {
   CiudadesOk,
   SectoresOk,
   PropuestasOk,
-  ClienteOk,
   Propuesta,
   FrecuenciaPago,
 } from "@/types/seguros-caracas";
@@ -536,13 +536,12 @@ function PersonaForm({
     setLookingUp(true);
     try {
       const r = await scClient.getCliente(data.nacionalidad, data.cedulaRif);
-      if (r.ok && "cliente" in r.data) {
-        const c = (r.data as ClienteOk).cliente;
-        onChange("nombres", c.nombres);
-        onChange("apellidosRazonSocial", c.apellidosRazonSocial);
-        onChange("feNacimiento", c.feNacimiento);
-        onChange("sexo", c.sexo);
-        onChange("edoCivil", c.edoCivil);
+      if (r.ok && "cliente" in r.data && (r.data as { cliente?: unknown }).cliente) {
+        // Real sasweb-test shape differs from the spec; normalizeCliente accepts both.
+        const found = normalizeCliente((r.data as { cliente: unknown }).cliente);
+        for (const [k, v] of Object.entries(found) as [keyof PersonaFormState, string][]) {
+          onChange(k, sanitizePersonaField(k, v));
+        }
       } else {
         // Not found vs. service error: show SC's own message when it sends one.
         const de = r.ok ? (r.data as { deError?: string }).deError : r.deError;
