@@ -105,6 +105,13 @@ export async function POST(req: NextRequest) {
   }
 
   const result = classifyEmitirResult(res.status, data);
+  if (!result.ok) {
+    // SC's own reason (no credentials in it): keys + message, to diagnose rejections.
+    const keys = data && typeof data === "object" ? Object.keys(data as object).join(",") : typeof data;
+    console.warn(
+      `[emitir] not ok: ${result.code} http=${res.status} cdError=${(data as { cdError?: unknown })?.cdError} keys=[${keys}] msg=${JSON.stringify(result.deError ?? "")}`
+    );
+  }
   if (result.ok) {
     return NextResponse.json(data, { status: res.status });
   }

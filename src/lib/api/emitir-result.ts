@@ -98,6 +98,33 @@ function isNum(v: unknown): v is number {
   return typeof v === "number" && Number.isFinite(v);
 }
 
+const MESSAGE_KEYS = ["deError", "mensaje", "message", "deMensaje", "descripcion", "detail", "title", "error"];
+
+/**
+ * Seguros Caracas' rejection reason. The spec names it `deError`, but the real
+ * service may use other keys or a nested list, so look in the usual places.
+ */
+export function extractScMessage(body: unknown, depth = 0): string {
+  if (depth > 2) return "";
+  if (Array.isArray(body)) {
+    const parts = body.map((b) => extractScMessage(b, depth + 1)).filter(Boolean);
+    return sanitizeDeError(parts.join(" · "));
+  }
+  if (typeof body === "string") return sanitizeDeError(body);
+  if (!isObject(body)) return "";
+  for (const k of MESSAGE_KEYS) {
+    const v = body[k];
+    if (typeof v === "string" && v.trim() && v.trim().toUpperCase() !== "OK") return sanitizeDeError(v);
+  }
+  for (const v of Object.values(body)) {
+    if (Array.isArray(v) || isObject(v)) {
+      const m = extractScMessage(v, depth + 1);
+      if (m) return m;
+    }
+  }
+  return "";
+}
+
 function fail(
   status: number,
   code: string,
@@ -127,7 +154,7 @@ export function classifyEmitirResult(status: number, body: unknown): EmitirResul
 
   const cdError = body.cdError;
   if (isNum(cdError) && cdError !== 0) {
-    const deError = sanitizeDeError(body.deError);
+    const deError = extractScMessage(body);
     return fail(422, "sc_rejected", deError || describeScError("sc_rejected"), deError);
   }
 

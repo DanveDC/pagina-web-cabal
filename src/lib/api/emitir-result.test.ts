@@ -160,3 +160,14 @@ test("classify is idempotent over the route's sc_rejected body", () => {
     assert.equal(r.message, "Cliente inválido");
   }
 });
+
+test("sc rejection reason is read from non-spec keys", async () => {
+  const { classifyEmitirResult } = await import("./emitir-result");
+  const a = classifyEmitirResult(200, { cdError: -1, mensaje: "Cliente sin <b>teléfono</b>" });
+  assert.equal(a.ok, false);
+  if (!a.ok) assert.equal(a.deError, "Cliente sin teléfono");
+  const b = classifyEmitirResult(200, { cdError: -1, errores: [{ descripcion: "Campo X requerido" }] });
+  if (!b.ok) assert.equal(b.deError, "Campo X requerido");
+  const c = classifyEmitirResult(200, { cdError: -1, deError: "OK" });
+  if (!c.ok) assert.equal(c.code, "sc_rejected");
+});
