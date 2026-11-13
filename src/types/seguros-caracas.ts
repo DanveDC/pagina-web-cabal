@@ -132,10 +132,14 @@ export interface SuscribirOk {
 }
 
 // 5. Propuestas (GET /consultarPropuestas?cdProductor=&cdConvenio=)
+// The PDF shows `mtPrima`; sasweb-test actually returns `mtPrimaBs` and
+// `mtPrimaUsd` (verified 13/11/2026). Accept both; use primaFrecuencia().
 export interface FrecuenciaPago {
   cdFrPago: string;
   deFrPago: string;
-  mtPrima: number;
+  mtPrima?: number;
+  mtPrimaBs?: number;
+  mtPrimaUsd?: number;
 }
 
 export interface Propuesta {
@@ -148,6 +152,8 @@ export interface Propuesta {
   mtPrima: number;
   nmPropuesta: string;
   taCambio: number;
+  /** Policy wording PDF (present in sasweb-test answers, not in the spec). */
+  condicionado?: string;
 }
 
 export interface PropuestasOk {

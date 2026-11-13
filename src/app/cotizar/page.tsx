@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { segurosCaracasClient } from "@/lib/api/seguros-caracas";
 import { EnvBanner } from "@/components/sc/env-banner";
 import { SC_DEMO } from "@/lib/sc-ambiente";
-import { monedaLabel, formatPrima, frecuenciaLabel } from "@/lib/sc-moneda";
+import { monedaLabel, formatPrima, frecuenciaLabel, primaFrecuencia } from "@/lib/sc-moneda";
 import { describeScError } from "@/lib/api/emitir-result";
 import { PendingActivation } from "@/components/sc/pending-activation";
 import { PERSONA_EMPTY } from "@/types/seguros-caracas";
@@ -42,7 +42,7 @@ interface PatrimonialForm { tipoRiesgo: string; valorBienes: string; direccion: 
 interface OfertaDisplay {
   nombre: string; siglas: string; color: string;
   prima_anual: number; cdMoneda: string;
-  frecuencias: { de: string; monto: number }[];
+  frecuencias: { de: string; monto: number | undefined }[];
   tag: string; score: number;
   coberturas: { label: string; valor: string }[];
   destacado: boolean;
@@ -586,7 +586,7 @@ export default function CotizarPage() {
         color: "#3A1335",
         prima_anual: p.mtPrima,
         cdMoneda: p.cdMoneda,
-        frecuencias: p.frecuencias.map(f => ({ de: frecuenciaLabel(f.cdFrPago, f.deFrPago), monto: f.mtPrima })),
+        frecuencias: p.frecuencias.map(f => ({ de: frecuenciaLabel(f.cdFrPago, f.deFrPago), monto: primaFrecuencia(f, p.cdMoneda) })),
         tag: p.nmPropuesta,
         score: 94,
         coberturas: [

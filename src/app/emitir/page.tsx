@@ -10,7 +10,7 @@ import { DemoBanner } from "@/components/sc/demo-banner";
 import { Turnstile } from "@/components/sc/turnstile";
 import { PendingActivation } from "@/components/sc/pending-activation";
 import { SC_ENABLED, SC_AMBIENTE, SC_DEMO, TURNSTILE_SITE_KEY } from "@/lib/sc-ambiente";
-import { formatPrima, monedaLabel, frecuenciaLabel } from "@/lib/sc-moneda";
+import { formatPrima, monedaLabel, frecuenciaLabel, primaFrecuencia } from "@/lib/sc-moneda";
 import {
   classifyEmitirResult,
   describeScError,
@@ -274,12 +274,23 @@ function StepPlan({
                 <div>
                   <div style={{ fontWeight: 700, color: "#1f1a1d", fontSize: "15px" }}>{p.nmPropuesta}</div>
                   <div style={{ fontSize: "12px", color: "#7a6d74", marginTop: "2px" }}>Convenio {p.cdConvenio} · {monedaLabel(p.cdMoneda)}</div>
+                  {typeof p.condicionado === "string" && /^https:\/\//.test(p.condicionado) && (
+                    <a href={p.condicionado} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}
+                      style={{ fontSize: "12px", color: "#3A1335", fontWeight: 600, display: "inline-block", marginTop: "4px" }}>
+                      Ver condicionado (PDF)
+                    </a>
+                  )}
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: "18px", fontWeight: 700, color: "#3A1335" }}>
-                    {formatPrima(p.cdMoneda, p.mtPrima)}
+                    {formatPrima(p.cdMoneda, primaFrecuencia(p.frecuencias.find((f) => f.cdFrPago === "A") ?? {}, p.cdMoneda) ?? p.mtPrima)}
                   </div>
                   <div style={{ fontSize: "11px", color: "#7a6d74" }}>prima anual</div>
+                  {typeof p.frecuencias.find((f) => f.cdFrPago === "A")?.mtPrimaBs === "number" && p.cdMoneda === "02" && (
+                    <div style={{ fontSize: "11px", color: "#7a6d74" }}>
+                      {formatPrima("01", p.frecuencias.find((f) => f.cdFrPago === "A")!.mtPrimaBs)}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -301,7 +312,7 @@ function StepPlan({
                           cursor: "pointer",
                           transition: "all 140ms ease",
                         }}>
-                        {frecuenciaLabel(f.cdFrPago, f.deFrPago)} · {formatPrima(p.cdMoneda, f.mtPrima)}
+                        {frecuenciaLabel(f.cdFrPago, f.deFrPago)} · {formatPrima(p.cdMoneda, primaFrecuencia(f, p.cdMoneda))}
                       </button>
                     );
                   })}
@@ -969,7 +980,7 @@ function StepConfirmar({
           <div style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#C2A378", marginBottom: "12px" }}>Plan seleccionado</div>
           <SummaryRow label="Plan" value={plan.nmPropuesta} />
           <SummaryRow label="Frecuencia" value={frecuenciaLabel(freq.cdFrPago, freq.deFrPago)} />
-          <SummaryRow label="Prima" value={formatPrima(plan.cdMoneda, freq.mtPrima)} />
+          <SummaryRow label="Prima" value={formatPrima(plan.cdMoneda, primaFrecuencia(freq, plan.cdMoneda))} />
         </div>
 
         {/* Inmueble */}
